@@ -1,5 +1,7 @@
-￼<!DOCTYPE html>
+￼
+<!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +9,7 @@
     <link rel="stylesheet" href="paint.css">
     <script src="paint.js"></script>
 </head>
+
 <body>
     <div id="main">
         <div id="tools">
@@ -17,18 +20,29 @@
             <div title="polyline"></div>
             <div title="eraser"></div>
         </div>
-        <canvas id="canvas"
-            width="500" height="500"></canvas>
-        <div id="colors">
-            <div title="red"></div>
-            <div title="green"></div>
-            <div title="blue"></div>
-            <div title="yellow"></div>
-            <div title="black"></div>
+        <div id="draw">
+            <canvas id="canvas" width="1024" height="800"></canvas>
+        </div>
+        <div>
+            <div id="colors">
+                <div title="red"></div>
+                <div title="green"></div>
+                <div title="blue"></div>
+                <div title="yellow"></div>
+                <div title="black"></div>
+            </div>
+            <div id="fill">
+                <div title="red"></div>
+                <div title="green"></div>
+                <div title="blue"></div>
+                <div title="yellow"></div>
+                <div title="black"></div>
+            </div>
         </div>
     </div>
     <script>
         setup();
     </script>
 </body>
+
 </html>
