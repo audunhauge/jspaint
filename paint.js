@@ -57,11 +57,12 @@ class Vector extends Point {
 class Shape extends Point {
   /**
    * (x,y) is a point, c is a color string
-   * @param {{x:number,y:number, c:string}} xyc
+   * @param {{x:number,y:number, c:string, f:string}} xyc
    */
-  constructor({ x, y, c }) {
+  constructor({ x, y, c, f}) {
     super({ x, y });
     this.c = c;
+    this.f = f;
   }
 }
 
@@ -78,9 +79,10 @@ class Square extends Shape {
    * @param {number} init.w width
    * @param {number} init.h height
    * @param {string} init.c color
+   * @param {string} init.f color
    */
-  constructor({ x, y, w, h, c }) {
-    super({ x, y, c });
+  constructor({ x, y, w, h, c ,f}) {
+    super({ x, y, c,f });
     this.w = w;
     this.h = h;
   }
@@ -91,7 +93,9 @@ class Square extends Shape {
   render(ctx) {
     ctx.beginPath();
     ctx.strokeStyle = this.c;
+    ctx.fillStyle = this.f;
     ctx.strokeRect(this.x, this.y, this.w, this.h);
+    ctx.fill();
   }
 }
 
@@ -102,10 +106,10 @@ class Square extends Shape {
 class Circle extends Shape {
   /**
    * Construct circle given x,y,r and c=color
-   * @param {{x:number,y:number,r:number,c:string}} xyrc
+   * @param {{x:number,y:number,r:number,c:string, f:string}} xyrc
    */
-  constructor({ x, y, r, c }) {
-    super({ x, y, c });
+  constructor({ x, y, r, c, f }) {
+    super({ x, y, c, f });
     this.r = r;
   }
   /**
@@ -115,8 +119,10 @@ class Circle extends Shape {
   render(ctx) {
     ctx.beginPath();
     ctx.strokeStyle = this.c;
+    ctx.fillStyle = this.f;
     ctx.arc(this.x, this.y, this.r, 0, 2 * Math.PI, false);
     ctx.stroke();
+    ctx.fill();
   }
 }
 
@@ -131,17 +137,29 @@ function setup() {
   // cast from html- to canvas- element
   const canCanvas = /** @type {HTMLCanvasElement} */ (g("canvas"));
   const divColors = g("colors");
+  const divFill = g("fill"); // topp av setup
   const ctx = canCanvas.getContext("2d");
 
   let color = "blue";
+  let fill = "transparent";  // ca linje 136
+
+
 
   divTools.addEventListener("click", activateTool);
   divColors.addEventListener("click", chooseColor);
+  divFill.addEventListener("click",chooseFill); // ca l. 140
 
   function chooseColor(e) {
     const t = e.target;
     if (t.title) {
       color = t.title;
+    }
+  }
+
+  function chooseFill(e) {
+    const t = e.target;
+    if (t.title) {
+      fill = t.title;
     }
   }
 
@@ -158,13 +176,14 @@ function setup() {
               y: 200,
               w: 50,
               h: 50,
-              c: color
+              c: color,
+              f: fill,
             });
             shape.render(ctx);
           }
           break;
         case "circle":
-          const shape = new Circle({ x: 200, y: 200, r: 50, c: color });
+          const shape = new Circle({ x: 200, y: 200, r: 50, c: color, f:fill });
           shape.render(ctx);
           break;
         case "polygon":
@@ -173,6 +192,7 @@ function setup() {
           break;
         case "erase":
           ctx.clearRect(0, 0, 500, 500);
+          fill = "transparent"; color="blue";
           break;
       }
     }

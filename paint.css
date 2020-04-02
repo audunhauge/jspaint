@@ -46,62 +46,23 @@
   margin: 1rem;
 }
 
-#tools > div:nth-child(1) {
-  position: relative;
-  width: 0;
-  height: 0;
-  border-top: 0 solid transparent;
-  border-left: 18px solid transparent;
-  border-right: 18px solid transparent;
-  border-bottom: 28px solid darkslategrey;
-  transform: rotate(-45deg) translate(2px, -4px);
+#tools label > div {
+  font-size: 3rem;
+  width: 64px;
+  height: 64px;
 }
 
-#tools > div:nth-child(1):after {
-  content: "";
-  width: 12px;
-  height: 6px;
-  background-color: darkslategrey;
+#tools input {
   position: absolute;
-  transform: rotate(-90deg) translate(-32px, -7px);
-  border: solid black 1px;
+  opacity: 0;
+ 
 }
 
-#tools > div:nth-child(2) {
-  border: solid brown 3px;
+
+input:checked ~ div {
+  box-shadow: 2px 2px 2px red;
 }
 
-#tools > div:nth-child(3) {
-  border-radius: 50%;
-  border: solid red 3px;
-}
-
-#tools > div:nth-child(4) {
-  width: 0;
-  height: 0;
-  border-top: 0 solid transparent;
-  border-left: 38px solid transparent;
-  border-right: 38px solid transparent;
-  border-bottom: 48px solid green;
-}
-
-#tools > div:nth-child(5) {
-  width: 64px;
-  height: 4px;
-  background-color: blue;
-  transform: rotate(-20deg);
-  margin-top: 3rem;
-  margin-bottom: 3rem;
-}
-
-#tools > div:nth-child(6) {
-  width: 64px;
-  height: 34px;
-  background: linear-gradient(to right, red 0%, red 49%, blue 50%, blue 100%);
-  transform: rotate(-45deg);
-  margin-top: 3rem;
-  margin-bottom: 3rem;
-}
 
 /*          farger      */
 
