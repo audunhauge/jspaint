@@ -56,13 +56,43 @@ class Vector extends Point {
  */
 class Shape extends Point {
   /**
-   * (x,y) is a point, c is a color string
-   * @param {{x:number,y:number, c:string, f:string}} xyc
+   * Construct a Shape given x,y and c=color, f=fill
+   * @param {Object} init parameters for the shape
+   * @param {number} init.x xpos
+   * @param {number} init.y ypos
+   * @param {string} init.c color
+   * @param {string} init.f color
    */
-  constructor({ x, y, c, f}) {
+  constructor({ x, y, c, f }) {
     super({ x, y });
     this.c = c;
     this.f = f;
+    this.rot = 0.0; // No rotation - short name bcs save space in file, r=radius
+  }
+  /**
+   * Draw the figure on given canvas
+   * Calls virtual drawme implemented by subclass
+   * @param {CanvasRenderingContext2D} ctx canvas to draw on
+   */
+  render(ctx) {
+    ctx.beginPath();
+    ctx.strokeStyle = this.c;
+    ctx.fillStyle = this.f;
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.rot);
+    ctx.translate(-this.x, -this.y);
+    this.drawme(ctx);
+    ctx.stroke();
+    ctx.fill();
+  }
+  /**
+   * Subclass shape drawing function - must override
+   * @abstract
+   * @param {CanvasRenderingContext2D} ctx canvas to draw on
+   */
+  drawme(ctx) {
+    // virtual function - override in subclass
+    console.log("drawme must be implemented in subclass",this);
   }
 }
 
@@ -81,8 +111,8 @@ class Square extends Shape {
    * @param {string} init.c color
    * @param {string} init.f color
    */
-  constructor({ x, y, w, h, c ,f}) {
-    super({ x, y, c,f });
+  constructor({ x, y, w, h, c, f }) {
+    super({ x, y, c, f });
     this.w = w;
     this.h = h;
   }
@@ -90,12 +120,8 @@ class Square extends Shape {
    * Draw the figure on given canvas
    * @param {CanvasRenderingContext2D} ctx canvas to draw on
    */
-  render(ctx) {
-    ctx.beginPath();
-    ctx.strokeStyle = this.c;
-    ctx.fillStyle = this.f;
+  drawme(ctx) {
     ctx.strokeRect(this.x, this.y, this.w, this.h);
-    ctx.fill();
   }
 }
 
@@ -106,7 +132,14 @@ class Square extends Shape {
 class Circle extends Shape {
   /**
    * Construct circle given x,y,r and c=color
-   * @param {{x:number,y:number,r:number,c:string, f:string}} xyrc
+  /**
+   * Construct a square given x,y and w,h, c is color
+   * @param {Object} init parameters for the shape
+   * @param {number} init.x xpos
+   * @param {number} init.y ypos
+   * @param {number} init.r radius
+   * @param {string} init.c color
+   * @param {string} init.f color
    */
   constructor({ x, y, r, c, f }) {
     super({ x, y, c, f });
@@ -116,19 +149,14 @@ class Circle extends Shape {
    * Draw the figure on given canvas
    * @param {CanvasRenderingContext2D} ctx canvas to draw on
    */
-  render(ctx) {
-    ctx.beginPath();
-    ctx.strokeStyle = this.c;
-    ctx.fillStyle = this.f;
+  drawme(ctx) {
     ctx.arc(this.x, this.y, this.r, 0, 2 * Math.PI, false);
-    ctx.stroke();
-    ctx.fill();
   }
 }
 
 /**
  * Get element from html id
- * @param {string} id
+ * @param {string} id html-element id
  */
 const g = id => document.getElementById(id);
 
@@ -141,13 +169,14 @@ function setup() {
   const ctx = canCanvas.getContext("2d");
 
   let color = "blue";
-  let fill = "transparent";  // ca linje 136
+  let fill = "transparent";
 
-
+  const test = new Shape({x:10,y:20,c:"blue",f:"red"});
+  test.render(ctx);
 
   divTools.addEventListener("click", activateTool);
   divColors.addEventListener("click", chooseColor);
-  divFill.addEventListener("click",chooseFill); // ca l. 140
+  divFill.addEventListener("click", chooseFill); 
 
   function chooseColor(e) {
     const t = e.target;
@@ -177,13 +206,19 @@ function setup() {
               w: 50,
               h: 50,
               c: color,
-              f: fill,
+              f: fill
             });
             shape.render(ctx);
           }
           break;
         case "circle":
-          const shape = new Circle({ x: 200, y: 200, r: 50, c: color, f:fill });
+          const shape = new Circle({
+            x: 200,
+            y: 200,
+            r: 50,
+            c: color,
+            f: fill
+          });
           shape.render(ctx);
           break;
         case "polygon":
@@ -192,7 +227,8 @@ function setup() {
           break;
         case "erase":
           ctx.clearRect(0, 0, 500, 500);
-          fill = "transparent"; color="blue";
+          fill = "transparent";
+          color = "blue";
           break;
       }
     }
