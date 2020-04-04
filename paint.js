@@ -92,7 +92,7 @@ class Shape extends Point {
    */
   drawme(ctx) {
     // virtual function - override in subclass
-    console.log("drawme must be implemented in subclass",this);
+    console.log("drawme must be implemented in subclass", this);
   }
 }
 
@@ -160,84 +160,181 @@ class Circle extends Shape {
  */
 const g = id => document.getElementById(id);
 
+// Static class to store current state of active tool
+// This works much like AT = { tool:"pointer", ...}
+// used here to show alternative to object
+// Gives error if you try to get/set properties not defined in class
+class AT {
+  static tool = "pointer";
+  static points = [];
+  static start = null;
+  static end = null;
+  static color = "blue";
+  static fill = "transparent";
+}
+
+// can only push Shape (or subclasses) into drawings
+/**  @type {Array.<Shape>}  */
+let drawings = [ ];
+
 function setup() {
   const divTools = g("tools");
-  // cast from html- to canvas- element
+  // cast from html-element to canvas
   const canCanvas = /** @type {HTMLCanvasElement} */ (g("canvas"));
+  const canGhost = /** @type {HTMLCanvasElement} */ (g("ghost"));
   const divColors = g("colors");
-  const divFill = g("fill"); // topp av setup
+  const divFill = g("fill");
   const ctx = canCanvas.getContext("2d");
-
-  let color = "blue";
-  let fill = "transparent";
-
-  const test = new Shape({x:10,y:20,c:"blue",f:"red"});
-  test.render(ctx);
+  const gtx = canGhost.getContext("2d"); // preview next drawing operation
+  const B = canCanvas.getBoundingClientRect(); // x,y for ø.v.hjørne på canvas
 
   divTools.addEventListener("click", activateTool);
   divColors.addEventListener("click", chooseColor);
-  divFill.addEventListener("click", chooseFill); 
+  divFill.addEventListener("click", chooseFill);
+
+  /* tool-use activated by mouse-down */
+  canCanvas.addEventListener("mousedown", startAction);
+  canCanvas.addEventListener("mouseup", endAction);
+
+  function startAction(e) {
+    const x = e.clientX - B.x;
+    const y = e.clientY - B.y;
+    AT.start = { x, y };
+    canCanvas.addEventListener("mousemove", showGhost);
+  }
+
+  function endAction(e) {
+    if (AT.start) {
+      // must have valid start
+      {
+        const x = e.clientX - B.x;
+        const y = e.clientY - B.y;
+        AT.end = { x, y };
+      }
+      {
+        const shape = makeShape(ctx, AT.start, AT.end);
+        if (shape) {
+          drawings.push(shape);
+        }
+      }
+    }
+    canCanvas.removeEventListener("mousemove", showGhost);
+    if (AT.tool !== "pgon") {
+      gtx.clearRect(0, 0, 1024, 800);
+      AT.start = null;
+    }
+  }
+
+  function showGhost(e) {
+    if (AT.start) {
+      // must have valid start
+      {
+        const x = e.clientX - B.x;
+        const y = e.clientY - B.y;
+        AT.end = { x, y };
+      }
+      const P = new Vector(AT.start);
+      const Q = new Vector(AT.end);
+      const delta = P.sub(Q).length;
+      if (delta > 2) {
+        gtx.clearRect(0, 0, 1024, 800);
+        makeShape(gtx, AT.start, AT.end);
+      }
+    }
+  }
 
   function chooseColor(e) {
     const t = e.target;
     if (t.title) {
-      color = t.title;
+      AT.color = t.title;
     }
   }
 
   function chooseFill(e) {
     const t = e.target;
     if (t.title) {
-      fill = t.title;
+      AT.fill = t.title;
     }
   }
 
   function activateTool(e) {
     const t = e.target;
     if (t.title) {
+      AT.tool = t.title;
+      // some tools have a simple action
+      // some have no submenues
       switch (t.title) {
-        case "pointer":
-          break;
-        case "square":
-          {
-            const shape = new Square({
-              x: 200,
-              y: 200,
-              w: 50,
-              h: 50,
-              c: color,
-              f: fill
-            });
-            shape.render(ctx);
-          }
-          break;
-        case "circle":
-          const shape = new Circle({
-            x: 200,
-            y: 200,
-            r: 50,
-            c: color,
-            f: fill
-          });
-          shape.render(ctx);
+        case "erase":
+          ctx.clearRect(0, 0, 1024, 800);
+          AT.fill = "transparent";
+          AT.color = "blue";
+          AT.tool = "pointer";
           break;
         case "polygon":
-          break;
         case "polyline":
+          // just so they dont reach default
           break;
-        case "erase":
-          ctx.clearRect(0, 0, 500, 500);
-          fill = "transparent";
-          color = "blue";
+        default:
+          // all others are subtools
+          // so we set parent radio to checked
+          {
+            if (t.dataset && t.dataset.parent) {
+              const p = document.getElementById(t.dataset.parent);
+              /**  @type {HTMLInputElement} */
+              (p).checked = true;
+            }
+          }
           break;
       }
     }
   }
 
-  function drawCircle() {
-    ctx.beginPath();
-    ctx.strokeStyle = color;
-    ctx.arc(200, 200, 50, 0, 2 * Math.PI, false);
-    ctx.stroke();
+  /**
+   *
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {Object} start Starting point
+   * @param {number} start.x xpos
+   * @param {number} start.y ypos
+   * @param {Object} end Ending point
+   * @param {number} end.x xpos
+   * @param {number} end.y ypos
+   * @returns {Shape}
+   */
+  function makeShape(ctx, start, end) {
+    let shape;
+    const c = AT.color;
+    const f = AT.fill;
+    switch (AT.tool) {
+      case "square":
+        {
+          const { x, y } = start;
+          const P = new Vector(start);
+          const Q = new Vector(end);
+          const wh = P.sub(Q);
+          const w = Math.abs(wh.x);
+          const h = Math.abs(wh.y);
+          if (h > 0 && w > 0) {
+            shape = new Square({ x, y, w, h, c, f });
+            shape.render(ctx);
+          }
+        }
+        break;
+      case "circle":
+        {
+          const { x, y } = start;
+          const P = new Vector(start);
+          const Q = new Vector(end);
+          const wh = P.sub(Q);
+          const r = Math.round(wh.length * 10) / 10;
+          if (r > 1) {
+            shape = new Circle({ x, y, r, c, f });
+            shape.render(ctx);
+          }
+        }
+        break;
+      default:
+        break;
+    }
+    return shape;
   }
 }

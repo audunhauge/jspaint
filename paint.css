@@ -32,18 +32,42 @@
   height: 100%;
 }
 
-#canvas {
+#canvas, #ghost {
   width: 1024px;
   height: 800px;
   left: 0px;
   top: 0px;
 }
 
+/* ghost is used for preview of next draw operation 
+   ignores all mouse-events and is transparent
+*/
+#ghost {
+  pointer-events: none;
+  position: absolute;
+  background-color: transparent;
+}
+
+
+/*****************************/
+/*     cursors               */
+/*****************************/
+canvas.move {
+  cursor: move;
+}
+
+canvas.rotate {
+  cursor: pointer;
+}
+
+
+
 /* ******************************************** 
   This section is a bit involved - allows choosing a subtool by input:radio
   and having this subtool show instead of generic main tool.
   Active tool is also chosen by input:radio on main-tool
 */
+
 /*  selecting a subtool should overlay the starting tool */
 
 /* the outer div for each tool */

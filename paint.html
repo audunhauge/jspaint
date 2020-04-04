@@ -15,57 +15,57 @@
         <div id="tools">
             <div>
                 <label>
-                    <input name="main" type="radio" checked>
+                    <input id="pointers" name="main" type="radio" checked>
                     <div>⭾</div>
                     <div>
                         <div>
                             <label>
                                 <input name="point" type="radio" checked>
-                                <div title="select a">↖</div>
+                                <div data-parent="pointers" title="select a">↖</div>
                             </label>
                         </div>
                         <div>
                             <label>
                                 <input name="point" type="radio">
-                                <div title="rotate r">↻</div>
+                                <div data-parent="pointers" title="rotate r">↻</div>
                             </label>
                         </div>
                         <div>
                             <label>
                                 <input name="point" type="radio">
-                                <div title="size s">⇔</div>
+                                <div data-parent="pointers" title="size s">⇔</div>
                             </label>
                         </div>
                         <div>
                             <label>
                                 <input name="point" type="radio">
-                                <div title="grab g">⇰</div>
+                                <div data-parent="pointers" title="grab g">⇰</div>
                             </label>
                         </div>
                     </div>
                 </label>
             </div>
-            <div title="square">
+            <div>
                 <label>
-                    <input name="main" type="radio">
+                    <input id="shapes" name="main" type="radio">
                     <div>▭</div>
                     <div>
                         <div>
                             <label>
                                 <input name="square" type="radio" checked>
-                                <div title="square">⬜</div>
+                                <div data-parent="shapes" title="square">⬜</div>
                             </label>
                         </div>
                         <div>
                             <label>
                                 <input name="square" type="radio">
-                                <div title="circle">⭕</div>
+                                <div data-parent="shapes" title="circle">⭕</div>
                             </label>
                         </div>
                         <div>
                             <label>
                                 <input name="square" type="radio">
-                                <div title="rounded">▢</div>
+                                <div data-parent="shapes" title="rounded">▢</div>
                             </label>
                         </div>
                     </div>
@@ -91,7 +91,8 @@
             </div>
         </div>
         <div id="draw">
-            <canvas id="canvas" width="1024" height="800"></canvas>
+            <canvas id="canvas" class="rotate" width="1024" height="800"></canvas>
+            <canvas id="ghost" width="1024" height="800"></canvas>
         </div>
         <div id="colors">
             <div title="red"></div>
@@ -101,11 +102,11 @@
             <div title="black"></div>
         </div>
         <div id="fill">
-            <div title="red"></div>
-            <div title="green"></div>
             <div title="blue"></div>
-            <div title="yellow"></div>
-            <div title="black"></div>
+            <div title="brown"></div>
+            <div title="pink"></div>
+            <div title="teal"></div>
+            <div title="darkslateblue"></div>
         </div>
     </div>
     <script>
