@@ -1,5 +1,6 @@
 // @ts-check
 
+
 /**
  * Simple base class, all figures must be placed at (x,y)
  */
@@ -68,6 +69,7 @@ class Shape extends Point {
     this.c = c;
     this.f = f;
     this.rot = 0.0; // No rotation - short name bcs save space in file, r=radius
+    this.bb = { x, y, w: 0, h: 0 }; // adjust in subclass
   }
   /**
    * Draw the figure on given canvas
@@ -94,6 +96,28 @@ class Shape extends Point {
     // virtual function - override in subclass
     console.log("drawme must be implemented in subclass", this);
   }
+
+  get info() {
+    const { x, y, c, f } = this;
+    return `<div>${this.constructor.name} {x:${x} y:${y}} 
+                <span style="color:${this.c};background:${this.f}">⬜</span>
+            </div>`;
+  }
+
+  /**
+   * Returns true if two shapes overlap, this and b
+   * @param {Object} b
+   * @param {number} b.x xpos
+   * @param {number} b.y xpos
+   * @param {number} b.w width
+   * @param {number} b.h height
+   */
+  overlap(b) {
+    const a = this.bb; // just for shortform
+    return (
+      a.x > b.x - a.w && a.x < b.x + b.w && a.y > b.y - a.h && a.y < b.y + b.h
+    );
+  }
 }
 
 /**
@@ -115,13 +139,19 @@ class Square extends Shape {
     super({ x, y, c, f });
     this.w = w;
     this.h = h;
+    this.bb = { x, y, w, h };
   }
   /**
    * Draw the figure on given canvas
+   * Move and Line as strokeRect cant be filled
    * @param {CanvasRenderingContext2D} ctx canvas to draw on
    */
   drawme(ctx) {
-    ctx.strokeRect(this.x, this.y, this.w, this.h);
+    ctx.moveTo(this.x, this.y);
+    ctx.lineTo(this.x + this.w, this.y);
+    ctx.lineTo(this.x + this.w, this.y + this.h);
+    ctx.lineTo(this.x, this.y + this.h);
+    ctx.closePath();
   }
 }
 
@@ -144,6 +174,7 @@ class Circle extends Shape {
   constructor({ x, y, r, c, f }) {
     super({ x, y, c, f });
     this.r = r;
+    this.bb = { x: x - r, y: y - r, w: r + r, h: r + r };
   }
   /**
    * Draw the figure on given canvas
@@ -165,25 +196,39 @@ const g = id => document.getElementById(id);
 // used here to show alternative to object
 // Gives error if you try to get/set properties not defined in class
 class AT {
-  static tool = "pointer";
+  static tool = "select";
   static points = [];
   static start = null;
   static end = null;
   static color = "blue";
   static fill = "transparent";
+  static type = "pointer";
+}
+
+// Static class for selecting shapes
+// Longer name as not so frequent use
+class SelectedShapes {
+  static list = [];
+  static show(elm) {
+    const s = SelectedShapes.list.map(e => e.info).join("");
+    elm.innerHTML = s;
+  }
 }
 
 // can only push Shape (or subclasses) into drawings
 /**  @type {Array.<Shape>}  */
-let drawings = [ ];
+let drawings = [];
 
 function setup() {
+  // handle keyboard commands
+ 
   const divTools = g("tools");
   // cast from html-element to canvas
   const canCanvas = /** @type {HTMLCanvasElement} */ (g("canvas"));
   const canGhost = /** @type {HTMLCanvasElement} */ (g("ghost"));
   const divColors = g("colors");
   const divFill = g("fill");
+  const divShapelist = g("shapelist");
   const ctx = canCanvas.getContext("2d");
   const gtx = canGhost.getContext("2d"); // preview next drawing operation
   const B = canCanvas.getBoundingClientRect(); // x,y for ø.v.hjørne på canvas
@@ -211,10 +256,25 @@ function setup() {
         const y = e.clientY - B.y;
         AT.end = { x, y };
       }
-      {
-        const shape = makeShape(ctx, AT.start, AT.end);
-        if (shape) {
-          drawings.push(shape);
+      switch (AT.type) {
+        case "pointer": {
+          // a select tool has drawn a square
+          // find any shape that overlaps
+          // and show them in shapelist
+          const { x, y } = AT.start;
+          const { x: a, y: b } = AT.end;
+          const bb = { x, y, w: a - x, h: b - y }; // bounding box
+          const inside = drawings.filter(e => e.overlap(bb));
+          SelectedShapes.list = inside;
+          SelectedShapes.show(divShapelist);
+          break;
+        }
+        case "shape": {
+          const shape = makeShape(ctx, AT.start, AT.end);
+          if (shape) {
+            drawings.push(shape);
+          }
+          break;
         }
       }
     }
@@ -260,23 +320,43 @@ function setup() {
   function activateTool(e) {
     const t = e.target;
     if (t.title) {
-      AT.tool = t.title;
       // some tools have a simple action
       // some have no submenues
+      AT.type = "shape"; // assume a shape
       switch (t.title) {
         case "erase":
           ctx.clearRect(0, 0, 1024, 800);
-          AT.fill = "transparent";
+          gtx.clearRect(0, 0, 1024, 800);
+          if (drawings.length > 0) {
+            drawings.pop();
+            for (const shape of drawings) {
+              shape.render(ctx);
+            }
+            SelectedShapes.list = SelectedShapes.list.filter(e =>
+              drawings.includes(e)
+            );
+            SelectedShapes.show(divShapelist);
+            // A deleted shape can't be selected
+          }
+          break;
+        case "new":
+          ctx.clearRect(0, 0, 1024, 800);
+          gtx.clearRect(0, 0, 1024, 800);
           AT.color = "blue";
-          AT.tool = "pointer";
+          AT.fill = "transparent";
+          drawings = [];
+          SelectedShapes.list = []; // no selected shapes
           break;
         case "polygon":
         case "polyline":
           // just so they dont reach default
           break;
+        case "select":
+          AT.type = "pointer"; // don't leave a trace
         default:
           // all others are subtools
           // so we set parent radio to checked
+          AT.tool = t.title;
           {
             if (t.dataset && t.dataset.parent) {
               const p = document.getElementById(t.dataset.parent);
@@ -329,6 +409,27 @@ function setup() {
           if (r > 1) {
             shape = new Circle({ x, y, r, c, f });
             shape.render(ctx);
+          }
+        }
+        break;
+      case "select":
+        {
+          const { x, y } = start;
+          const P = new Vector(start);
+          const Q = new Vector(end);
+          const wh = P.sub(Q);
+          const w = Math.abs(wh.x);
+          const h = Math.abs(wh.y);
+          if (h > 0 && w > 0) {
+            const marker = new Square({
+              x,
+              y,
+              w,
+              h,
+              c: "gray",
+              f: "transparent"
+            });
+            marker.render(ctx);
           }
         }
         break;

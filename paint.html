@@ -15,31 +15,43 @@
         <div id="tools">
             <div>
                 <label>
+                    <div><span>File</span></div>
+                    <div>
+                        <div>
+                            <label>
+                                <div title="new"><span title="new">New</span></div>
+                            </label>
+                        </div>
+                    </div>
+                </label>
+            </div>
+            <div>
+                <label>
                     <input id="pointers" name="main" type="radio" checked>
-                    <div>⭾</div>
+                    <div class="icon">⭾</div>
                     <div>
                         <div>
                             <label>
                                 <input name="point" type="radio" checked>
-                                <div data-parent="pointers" title="select a">↖</div>
+                                <div  class="icon" data-parent="pointers" title="select">↖</div>
                             </label>
                         </div>
                         <div>
                             <label>
                                 <input name="point" type="radio">
-                                <div data-parent="pointers" title="rotate r">↻</div>
+                                <div  class="icon" data-parent="pointers" title="rotate">↻</div>
                             </label>
                         </div>
                         <div>
                             <label>
                                 <input name="point" type="radio">
-                                <div data-parent="pointers" title="size s">⇔</div>
+                                <div  class="icon" data-parent="pointers" title="size">⇔</div>
                             </label>
                         </div>
                         <div>
                             <label>
                                 <input name="point" type="radio">
-                                <div data-parent="pointers" title="grab g">⇰</div>
+                                <div  class="icon" data-parent="pointers" title="grab">⇰</div>
                             </label>
                         </div>
                     </div>
@@ -48,45 +60,44 @@
             <div>
                 <label>
                     <input id="shapes" name="main" type="radio">
-                    <div>▭</div>
+                    <div class="icon">▭</div>
                     <div>
                         <div>
                             <label>
                                 <input name="square" type="radio" checked>
-                                <div data-parent="shapes" title="square">⬜</div>
+                                <div  class="icon" data-parent="shapes" title="square">⬜</div>
                             </label>
                         </div>
                         <div>
                             <label>
                                 <input name="square" type="radio">
-                                <div data-parent="shapes" title="circle">⭕</div>
+                                <div  class="icon" data-parent="shapes" title="circle">⭕</div>
                             </label>
                         </div>
                         <div>
                             <label>
                                 <input name="square" type="radio">
-                                <div data-parent="shapes" title="rounded">▢</div>
+                                <div  class="icon" data-parent="shapes" title="rounded">▢</div>
                             </label>
                         </div>
                     </div>
                 </label>
             </div>
-            <div title="polygon">
+            <div>
                 <label>
                     <input name="main" type="radio">
-                    <div>◿</div>
+                    <div class="icon">◿</div>
                 </label>
             </div>
-            <div title="polyline">
+            <div>
                 <label>
                     <input name="main" type="radio">
-                    <div>◞</div>
+                    <div class="icon">◞</div>
                 </label>
             </div>
-            <div title="eraser">
+            <div>
                 <label>
-                    <input name="main" type="radio">
-                    <div>◍</div>
+                    <div  class="icon" title="erase">◍</div>
                 </label>
             </div>
         </div>
@@ -107,6 +118,9 @@
             <div title="pink"></div>
             <div title="teal"></div>
             <div title="darkslateblue"></div>
+        </div>
+        <div id="shapelist">
+            
         </div>
     </div>
     <script>

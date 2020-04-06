@@ -7,11 +7,18 @@
 }
 
 #fill,
+#shapelist,
 #tools,
 #canvas,
 #colors {
   position: absolute;
   background-color: whitesmoke;
+}
+
+#shapelist {
+  right: 20px;
+  width: 200px;
+  height: 100%;
 }
 
 #draw {
@@ -22,7 +29,7 @@
   min-width: 300px;
   min-height: 200px;
   height: calc(80vh - 100px);
-  width: calc(98% - 200px);
+  width: calc(98% - 400px);
 }
 
 #tools {
@@ -30,6 +37,7 @@
   top: 0;
   width: 150px;
   height: 100%;
+  user-select: none;
 }
 
 #canvas, #ghost {
@@ -80,10 +88,19 @@ canvas.rotate {
   background-color: white;
 }
 
+/* some tools use text - only icons should be large */
+div.icon {
+  font-size: 3rem;
+}
+
+#tools label > div:nth-of-type(1) span {
+  display:inline-block;
+  padding-top:16px;
+}
+
 /* this may be the only div if no subtools */
 #tools label > div:nth-of-type(1) {
-  text-align: center;;
-  font-size: 3rem;
+  text-align: center;
   width: 64px;
   height: 64px;
 }
