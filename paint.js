@@ -1,5 +1,28 @@
 // @ts-check
 
+/**
+ * Handles keypress - can check if(Keys.has("ArrowDown"))
+ */
+class Keys {
+  static _keys = new Set();
+  static _za = document.addEventListener("keydown", Keys._mark);
+  static _zb = document.addEventListener("keyup", Keys._unmark);
+  static _mark(e) {
+    Keys._keys.add(e.key);
+  }
+  static _unmark(e) {
+    Keys._keys.delete(e.key);
+  }
+  static any() {
+    return Keys._keys.size > 0;
+  }
+  static many() {
+    return Keys._keys.size > 1;
+  }
+  static has(a) {
+    return Keys._keys.has(a);
+  }
+}
 
 /**
  * Simple base class, all figures must be placed at (x,y)
@@ -56,6 +79,7 @@ class Vector extends Point {
  * @extends Point
  */
 class Shape extends Point {
+  static idx = 1; // every shape gets an id
   /**
    * Construct a Shape given x,y and c=color, f=fill
    * @param {Object} init parameters for the shape
@@ -70,6 +94,7 @@ class Shape extends Point {
     this.f = f;
     this.rot = 0.0; // No rotation - short name bcs save space in file, r=radius
     this.bb = { x, y, w: 0, h: 0 }; // adjust in subclass
+    this.id = Shape.idx++;
   }
   /**
    * Draw the figure on given canvas
@@ -95,6 +120,17 @@ class Shape extends Point {
   drawme(ctx) {
     // virtual function - override in subclass
     console.log("drawme must be implemented in subclass", this);
+  }
+
+  /**
+   *
+   * @param {Vector} d displacement
+   */
+  move(d) {
+    this.x += d.x;
+    this.y += d.y;
+    this.bb.x = this.x;
+    this.bb.y = this.y;
   }
 
   get info() {
@@ -183,6 +219,13 @@ class Circle extends Shape {
   drawme(ctx) {
     ctx.arc(this.x, this.y, this.r, 0, 2 * Math.PI, false);
   }
+  // must override move as bb needs adjusting for circle
+  move(d) {
+    this.x += d.x;
+    this.y += d.y;
+    this.bb.x = this.x - this.r;
+    this.bb.y = this.y - this.r;
+  }
 }
 
 /**
@@ -203,15 +246,44 @@ class AT {
   static color = "blue";
   static fill = "transparent";
   static type = "pointer";
+  static abort = false;
 }
 
 // Static class for selecting shapes
 // Longer name as not so frequent use
 class SelectedShapes {
   static list = [];
+  /**
+   * Show the selected list
+   * @param {HTMLElement} elm div to show list in
+   */
   static show(elm) {
     const s = SelectedShapes.list.map(e => e.info).join("");
     elm.innerHTML = s;
+  }
+  /**
+   * Hilite selected elements
+   * @param {CanvasRenderingContext2D} ctx 
+   */
+  static ghost(ctx) {
+    for (const s of SelectedShapes.list) {
+      const { c, f } = s;
+      s.c = "red";
+      s.f = "rgba(0,0,250,0.2)";
+      s.render(ctx);
+      s.c = c;
+      s.f = f;
+    }
+  }
+  /**
+   * 
+   * @param {string} what property to update
+   * @param {string} color valid css color
+   */
+  static update(what, color) {
+    for (const s of SelectedShapes.list) {
+      s[what] = color;
+    }
   }
 }
 
@@ -220,8 +292,6 @@ class SelectedShapes {
 let drawings = [];
 
 function setup() {
-  // handle keyboard commands
- 
   const divTools = g("tools");
   // cast from html-element to canvas
   const canCanvas = /** @type {HTMLCanvasElement} */ (g("canvas"));
@@ -241,6 +311,89 @@ function setup() {
   canCanvas.addEventListener("mousedown", startAction);
   canCanvas.addEventListener("mouseup", endAction);
 
+  document.addEventListener("keydown", keyAction);
+
+  const cleanGhost = () => gtx.clearRect(0, 0, 1024, 800);
+  const cleanCanvas = () => ctx.clearRect(0, 0, 1024, 800);
+
+  function keyAction(e) {
+    // only valid if current type is pointer
+    // and there is a valid selection
+    if (Keys.has("a")) {
+      AT.tool = "select";
+      AT.type = "pointer";
+    }
+    if (AT.type === "pointer" && SelectedShapes.list.length > 0) {
+      if (Keys.has("Escape")) {
+        AT.abort = true;
+        canCanvas.classList.remove("move");
+        cleanGhost();
+      }
+      if (Keys.has("g")) {
+        AT.tool = "move";
+        canCanvas.classList.add("move");
+      }
+      if (Keys.has("r")) {
+        AT.tool = "rotate";
+      }
+      if (Keys.has("s")) {
+        AT.tool = "scale";
+      }
+      if (Keys.has("x")) {
+        drawings = drawings.filter(e => !SelectedShapes.list.includes(e));
+        renderAll();
+        SelectedShapes.list = [];
+        SelectedShapes.show(divShapelist);
+      }
+      if (Keys.has("u") && SelectedShapes.list.length === 1) {
+        // move selected shape UP in drawing stack
+        // towards end of drawing array
+        const shape = SelectedShapes.list[0];
+        const index = drawings.indexOf(shape);
+        if (index < drawings.length - 1) {
+          // not last ie TOP element
+          // swap with next higher element
+          const temp = drawings[index + 1];
+          drawings[index + 1] = shape;
+          drawings[index] = temp;
+          renderAll();
+        }
+      }
+      if (Keys.has("Shift") && Keys.has("D")) {
+        // duplicate selected elements
+        if (SelectedShapes.list.length > 0) {
+          const start = drawings.length; // needed later
+          // place the clones in drawings
+          for (const s of SelectedShapes.list) {
+            const clone = Object.assign(
+              Object.create(Object.getPrototypeOf(s)),
+              s
+            );
+            drawings.push(clone);
+          }
+          // make the clones the new selected list
+          // const count = SelectedShapes.list.length;
+          SelectedShapes.list = drawings.slice(start);
+        }
+        Keys._keys.delete("D");
+      }
+      if (Keys.has("d") && SelectedShapes.list.length === 1) {
+        // move selected shape DOWN in drawing stack
+        // towards start of drawing array
+        const shape = SelectedShapes.list[0];
+        const index = drawings.indexOf(shape);
+        if (index > 0) {
+          // not first ie BOTTOM element
+          // swap with next lower element
+          const temp = drawings[index - 1];
+          drawings[index - 1] = shape;
+          drawings[index] = temp;
+          renderAll();
+        }
+      }
+    }
+  }
+
   function startAction(e) {
     const x = e.clientX - B.x;
     const y = e.clientY - B.y;
@@ -249,7 +402,7 @@ function setup() {
   }
 
   function endAction(e) {
-    if (AT.start) {
+    if (AT.start && !AT.abort) {
       // must have valid start
       {
         const x = e.clientX - B.x;
@@ -258,15 +411,32 @@ function setup() {
       }
       switch (AT.type) {
         case "pointer": {
-          // a select tool has drawn a square
-          // find any shape that overlaps
-          // and show them in shapelist
-          const { x, y } = AT.start;
-          const { x: a, y: b } = AT.end;
-          const bb = { x, y, w: a - x, h: b - y }; // bounding box
-          const inside = drawings.filter(e => e.overlap(bb));
-          SelectedShapes.list = inside;
-          SelectedShapes.show(divShapelist);
+          if (AT.tool === "select") {
+            // a select tool has drawn a square
+            // find any shape that overlaps
+            // and show them in shapelist
+            const { x, y } = AT.start;
+            const { x: a, y: b } = AT.end;
+            const bb = { x, y, w: a - x, h: b - y }; // bounding box
+            const inside = drawings.filter(e => e.overlap(bb));
+            SelectedShapes.list = inside;
+            SelectedShapes.show(divShapelist);
+          }
+          if (AT.tool === "move") {
+            // a move tool has moved from start to end
+            const p1 = new Vector(AT.start);
+            const p2 = new Vector(AT.end);
+            const diff = p2.sub(p1);
+            if (diff.length > 1) {
+              for (const s of SelectedShapes.list) {
+                s.move(diff);
+              }
+              renderAll();
+            }
+            AT.tool = "select";
+            canCanvas.classList.remove("move");
+          }
+
           break;
         }
         case "shape": {
@@ -280,9 +450,11 @@ function setup() {
     }
     canCanvas.removeEventListener("mousemove", showGhost);
     if (AT.tool !== "pgon") {
-      gtx.clearRect(0, 0, 1024, 800);
+      cleanGhost();
       AT.start = null;
+      AT.abort = false;
     }
+    SelectedShapes.ghost(gtx);
   }
 
   function showGhost(e) {
@@ -297,7 +469,7 @@ function setup() {
       const Q = new Vector(AT.end);
       const delta = P.sub(Q).length;
       if (delta > 2) {
-        gtx.clearRect(0, 0, 1024, 800);
+        cleanGhost();
         makeShape(gtx, AT.start, AT.end);
       }
     }
@@ -307,6 +479,10 @@ function setup() {
     const t = e.target;
     if (t.title) {
       AT.color = t.title;
+      SelectedShapes.update("c", AT.color);
+      if (SelectedShapes.list.length > 0) {
+        renderAll();
+      }
     }
   }
 
@@ -314,6 +490,18 @@ function setup() {
     const t = e.target;
     if (t.title) {
       AT.fill = t.title;
+      SelectedShapes.update("f", AT.fill);
+      if (SelectedShapes.list.length > 0) {
+        renderAll();
+      }
+    }
+  }
+
+  function renderAll() {
+    cleanCanvas();
+    cleanGhost();
+    for (const shape of drawings) {
+      shape.render(ctx);
     }
   }
 
@@ -325,13 +513,11 @@ function setup() {
       AT.type = "shape"; // assume a shape
       switch (t.title) {
         case "erase":
-          ctx.clearRect(0, 0, 1024, 800);
-          gtx.clearRect(0, 0, 1024, 800);
+          cleanGhost();
+          cleanCanvas();
           if (drawings.length > 0) {
             drawings.pop();
-            for (const shape of drawings) {
-              shape.render(ctx);
-            }
+            renderAll();
             SelectedShapes.list = SelectedShapes.list.filter(e =>
               drawings.includes(e)
             );
@@ -340,8 +526,8 @@ function setup() {
           }
           break;
         case "new":
-          ctx.clearRect(0, 0, 1024, 800);
-          gtx.clearRect(0, 0, 1024, 800);
+          cleanGhost();
+          cleanCanvas();
           AT.color = "blue";
           AT.fill = "transparent";
           drawings = [];
@@ -351,6 +537,7 @@ function setup() {
         case "polyline":
           // just so they dont reach default
           break;
+        case "move":
         case "select":
           AT.type = "pointer"; // don't leave a trace
         default:
@@ -409,6 +596,29 @@ function setup() {
           if (r > 1) {
             shape = new Circle({ x, y, r, c, f });
             shape.render(ctx);
+          }
+        }
+        break;
+      case "move":
+        // show move on ghost canvas
+        const p1 = new Vector(AT.start);
+        const p2 = new Vector(AT.end);
+        const diff = p2.sub(p1);
+        if (diff.length > 1) {
+          cleanGhost();
+          for (const s of SelectedShapes.list) {
+            const { x, y, c, f } = s;
+            // must make a 1 level deeper copy of bb
+            let bb;
+            {
+              const { x, y, w, h } = s.bb;
+              bb = { x, y, w, h };
+            }
+            s.c = "red";
+            s.f = "rgba(250,0,0,0.1)";
+            s.move(diff);
+            s.render(gtx);
+            Object.assign(s, { x, y, bb, c, f });
           }
         }
         break;
