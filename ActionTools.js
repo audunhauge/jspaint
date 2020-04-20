@@ -20,6 +20,7 @@
  * @property {String}  type  - "pointer"|"shape"
  * @property {Boolean}  abort  - true if Escape pressed
  * @property {Point|null}  mouse  - Set by mousemove on canvas
+ * @property {Object|null} revert  - go back to this tool after single action
  */
 class AT {
   static tool = "select";
@@ -31,20 +32,33 @@ class AT {
   static type = "pointer";
   static abort = false;
   static mouse = null;
+  static revert = null;
+  static showfillAndColor;  // see setup()
 }
 
 /**
  * Static class for selecting shapes
  * Longer name as not so frequent use
+ * @namespace SelectedShapes
+ * @property {Array.<Shape>}  list  - selected shapes
  */
 class SelectedShapes {
-  /**  @type {Array.<Shape>}  */
   static list = [];
+
+  /**
+   * Ensures any shape is only selected once
+   */
+  static _clean() {
+    const unique = new Set(SelectedShapes.list);
+    SelectedShapes.list = Array.from(unique);
+  }
+
   /**
    * Show the selected list
    * @param {HTMLElement} elm div to show list in
    */
   static show(elm) {
+    SelectedShapes._clean(); // remove dupes
     const s = SelectedShapes.list.map(e => e.info).join("");
     elm.innerHTML = s;
   }
@@ -72,6 +86,25 @@ class SelectedShapes {
       s[what] = color;
     }
   }
+}
+
+/**
+ *
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {CanvasRenderingContext2D} gtx
+ * @param {Object} start Starting point
+ * @param {number} start.x xpos
+ * @param {number} start.y ypos
+ * @param {Object} end Ending point
+ * @param {number} end.x xpos
+ * @param {number} end.y ypos
+ * @returns {Shape|undefined}
+ */
+function makeShape(ctx, gtx, start, end) {
+  // using the new Optional chaining operator ?.
+  // IF makeshapes has this tool THEN run the function
+  // ELSE return undefined
+  return MakeShapes[AT.tool]?.({ gtx, ctx, start, end });
 }
 
 /**
@@ -148,19 +181,11 @@ class MakeShapes {
       const { x, y } = start;
       const P = new Vector(start);
       const Q = new Vector(end);
-      const wh = P.sub(Q);
-      const w = Math.abs(wh.x);
-      const h = Math.abs(wh.y);
-      if (h > 0 && w > 0) {
-        const marker = new Square({
-          x,
-          y,
-          w,
-          h,
-          c: "gray",
-          f: "transparent"
-        });
-        marker.render(ctx); // ctx will always be gtx for select
+      const wh = Q.sub(P);
+      const r = Math.round(wh.length * 10) / 10;
+      if (r > 1) {
+        const marker = new Circle({ x, y, r, c: "gray", f: "transparent" });
+        marker.render(ctx);
       }
     }
     return undefined;
@@ -177,22 +202,96 @@ class MakeShapes {
     if (diff.length > 1) {
       cleanGhost();
       for (const s of SelectedShapes.list) {
-        const { x, y, c, f } = s;
+        const { x, y, c, f, rot } = s;
         // must make a 1 level deeper copy of bb
         let bb;
         {
           const { x, y, w, h } = s.bb;
           bb = { x, y, w, h };
         }
+        s.rot = 0;
         s.c = "red";
         s.f = "rgba(250,0,0,0.1)";
         s.move(diff);
         s.render(gtx);
-        Object.assign(s, { x, y, bb, c, f });
+        Object.assign(s, { x, y, bb, c, f, rot });
         // s should remain unchanged
       }
     }
     return undefined;
+  }
+  /**
+   * @param {Object} init
+   * @param {CanvasRenderingContext2D} init.gtx canvas
+   * @returns {undefined}
+   */
+  static rotate({ gtx }) {
+    const p1 = new Vector(AT.start);
+    const p2 = new Vector(AT.end);
+    const diff = p2.sub(p1);
+    if (diff.length > 1) {
+      cleanGhost();
+      for (const s of SelectedShapes.list) {
+        const { c, f, rot } = s;
+        s.c = "red";
+        s.f = "rgba(250,0,0,0.1)";
+        s.rotate(diff);
+        s.render(gtx);
+        Object.assign(s, { c, f, rot });
+        // s should remain unchanged
+      }
+    }
+    return undefined;
+  }
+  static scale({ gtx }) {
+    const p1 = new Vector(AT.start);
+    const p2 = new Vector(AT.end);
+    const diff = p2.sub(p1);
+    if (diff.length > 1) {
+      cleanGhost();
+      for (const s of SelectedShapes.list) {
+        const { x, y, c, f, rot, w, h, r } = s;
+        // must make a 1 level deeper copy of bb
+        let bb;
+        {
+          const { x, y, w, h } = s.bb;
+          bb = { x, y, w, h };
+        }
+        s.rot = 0;
+        s.c = "red";
+        s.f = "rgba(250,0,0,0.1)";
+        s.scale(diff);
+        s.render(gtx);
+        Object.assign(s, { x, y, bb, c, f, rot, w, h, r });
+        // s should remain unchanged
+      }
+    }
+    return undefined;
+  }
+}
+
+/**
+ * Check if a tool (has a title) was clicked.
+ * This event triggered on divTools - so we expect a title on all tool-icons.
+ * But if user misses - then click is ignored.
+ * Some tools may be mising - thus default action for those.
+ * Or they may be the generic tool icon for a group - they have no action
+ * @param {MouseEvent} e
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {HTMLElement} divShapelist
+ */
+function activateTool(e, ctx, gtx, divShapelist) {
+  const t = /** @type {HTMLElement}*/ (e.target);
+  if (t.title) {
+    AT.type = "shape"; // assume a shape
+    ctx.resetTransform();
+    gtx.resetTransform();
+    const toolName = t.title;
+    if (Tools[toolName]) {
+      Tools[toolName]({ t, ctx, divShapelist });
+    } else {
+      Tools.default(t);
+    }
   }
 }
 
@@ -281,25 +380,6 @@ function _roundRect(x, y, width, height, radius) {
 CanvasRenderingContext2D.prototype.roundRect = _roundRect;
 
 /**
- *
- * @param {CanvasRenderingContext2D} ctx
- * @param {CanvasRenderingContext2D} gtx
- * @param {Object} start Starting point
- * @param {number} start.x xpos
- * @param {number} start.y ypos
- * @param {Object} end Ending point
- * @param {number} end.x xpos
- * @param {number} end.y ypos
- * @returns {Shape|undefined}
- */
-function makeShape(ctx, gtx, start, end) {
-  // using the new Optional chaining operator ?.
-  // IF makeshapes has this tool THEN run the function
-  // ELSE return undefined
-  return MakeShapes[AT.tool]?.({ gtx, ctx, start, end });
-}
-
-/**
  * Draws all shapes from drawings onto canvas, cleans ghost
  * @param {CanvasRenderingContext2D} ctx
  */
@@ -308,124 +388,6 @@ function renderAll(ctx) {
   cleanGhost();
   for (const shape of drawings) {
     shape.render(ctx);
-  }
-}
-
-/**
- * Check if a tool (has a title) was clicked.
- * This event triggered on divTools - so we expect a title on all tool-icons.
- * But if user misses - then click is ignored.
- * Some tools may be mising - thus default action for those.
- * Or they may be the generic tool icon for a group - they have no action
- * @param {MouseEvent} e
- * @param {CanvasRenderingContext2D} ctx
- * @param {HTMLElement} divShapelist
- */
-function activateTool(e, ctx, divShapelist) {
-  const t = /** @type {HTMLElement}*/ (e.target);
-  if (t.title) {
-    AT.type = "shape"; // assume a shape
-    const toolName = t.title;
-    if (Tools[toolName]) {
-      Tools[toolName]({ t, ctx, divShapelist });
-    } else {
-      Tools.default(t);
-    }
-  }
-}
-
-/**
- * @param {KeyboardEvent} e
- * @param {HTMLElement} canCanvas
- * @param {CanvasRenderingContext2D} ctx
- * @param {HTMLElement} divShapelist
- */
-function keyAction(e, canCanvas, ctx, divShapelist) {
-  const key = e.key;
-  // simple and extended are assumed to not overlap
-  // a g x r s Escape
-  // SelectedList can be empty
-  SimpleKeyAction[key]?.({ canCanvas, ctx, divShapelist });
-  // u d D
-  // must have a selection
-  if (AT.type === "pointer" && SelectedShapes.list.length > 0) {
-    ExtendedKeyAction[key]?.({ canCanvas, ctx, divShapelist });
-  }
-}
-
-class SimpleKeyAction {
-  static a(obj) {
-    AT.tool = "select";
-    AT.type = "pointer";
-    pointerActive();
-  }
-  static Escape({ canCanvas }) {
-    AT.abort = true;
-    canCanvas.classList.remove("move");
-    cleanGhost();
-  }
-  static r(obj) {
-    AT.tool = "rotate";
-  }
-  static s(obj) {
-    AT.tool = "scale";
-  }
-  static g({ canCanvas }) {
-    AT.tool = "move";
-    AT.type = "pointer";
-    canCanvas.classList.add("move");
-    pointerActive();
-    if (SelectedShapes.list.length === 0) {
-      // select shape under pointer
-      const { x, y } = AT.mouse;
-      const bb = { x, y, w: 1, h: 1 }; // bounding box
-      const inside = drawings.filter(e => e.overlap(bb));
-      SelectedShapes.list = inside.slice(-1);
-    }
-  }
-  static x({ ctx, divShapelist }) {
-    drawings = drawings.filter(e => !SelectedShapes.list.includes(e));
-    renderAll(ctx);
-    SelectedShapes.list = [];
-    SelectedShapes.show(divShapelist);
-  }
-}
-
-class ExtendedKeyAction {
-  static u({ ctx }) {
-    const shape = SelectedShapes.list[0];
-    const index = drawings.indexOf(shape);
-    if (index < drawings.length - 1) {
-      // not last ie TOP element
-      // swap with next higher element
-      const temp = drawings[index + 1];
-      drawings[index + 1] = shape;
-      drawings[index] = temp;
-      renderAll(ctx);
-    }
-  }
-  static d({ ctx }) {
-    const shape = SelectedShapes.list[0];
-    const index = drawings.indexOf(shape);
-    if (index > 0) {
-      // not first ie BOTTOM element
-      // swap with next lower element
-      const temp = drawings[index - 1];
-      drawings[index - 1] = shape;
-      drawings[index] = temp;
-      renderAll(ctx);
-    }
-  }
-  static D(obj) {
-    const start = drawings.length; // needed later
-    // place the clones in drawings
-    for (const s of SelectedShapes.list) {
-      const clone = Object.assign(Object.create(Object.getPrototypeOf(s)), s);
-      drawings.push(clone);
-    }
-    // make the clones the new selected list
-    // const count = SelectedShapes.list.length;
-    SelectedShapes.list = drawings.slice(start);
   }
 }
 
@@ -452,11 +414,19 @@ function endAction(e, divShapelist, canCanvas, ctx, gtx) {
           // a select tool has drawn a square
           // find any shape that overlaps
           // and show them in shapelist
-          const { x, y } = AT.start;
-          const { x: a, y: b } = AT.end;
-          const bb = { x, y, w: a - x, h: b - y }; // bounding box
-          const inside = drawings.filter(e => e.overlap(bb));
-          SelectedShapes.list = inside;
+          const P = new Vector(AT.start);
+          const Q = new Vector(AT.end);
+          const wh = Q.sub(P);
+          const r = Math.round(wh.length * 10) / 10;
+          const bb = { center: AT.start, r };
+          const inside = drawings.filter(e => e.touching(bb));
+          if (Keys.has("Shift")) {  // extend selection
+            SelectedShapes.list = SelectedShapes.list.concat(inside)
+          } else  if (Keys.has("Control")) {  // reduce
+            SelectedShapes.list = SelectedShapes.list.filter(e => !inside.includes(e));
+          } else {  // make new
+            SelectedShapes.list = inside;
+          }
           SelectedShapes.show(divShapelist);
         }
         if (AT.tool === "move") {
@@ -467,12 +437,41 @@ function endAction(e, divShapelist, canCanvas, ctx, gtx) {
           if (diff.length > 1) {
             for (const s of SelectedShapes.list) {
               s.move(diff);
+              s.centered();
             }
             renderAll(ctx);
           }
           AT.tool = "select";
           canCanvas.classList.remove("move");
         }
+        if (AT.tool === "rotate") {
+          // a rotate tool has moved from start to end
+          const p1 = new Vector(AT.start);
+          const p2 = new Vector(AT.end);
+          const diff = p2.sub(p1);
+          if (diff.length > 1) {
+            for (const s of SelectedShapes.list) {
+              s.rotate(diff);
+            }
+            renderAll(ctx);
+          }
+          AT.tool = "select";
+          canCanvas.classList.remove("move");
+        }
+        if (AT.tool === "scale") {
+            // a scale tool has moved from start to end
+            const p1 = new Vector(AT.start);
+            const p2 = new Vector(AT.end);
+            const diff = p2.sub(p1);
+            if (diff.length > 1) {
+              for (const s of SelectedShapes.list) {
+                s.scale(diff);
+              }
+              renderAll(ctx);
+            }
+            AT.tool = "select";
+            canCanvas.classList.remove("move");
+          }
         break;
       }
       case "shape": {
@@ -482,6 +481,9 @@ function endAction(e, divShapelist, canCanvas, ctx, gtx) {
         }
         break;
       }
+      default: {
+        AT.tool = "select";
+      }
     }
   }
   canCanvas.removeEventListener("mousemove", e => showGhost(e, gtx));
@@ -489,6 +491,18 @@ function endAction(e, divShapelist, canCanvas, ctx, gtx) {
     cleanGhost();
     AT.start = null;
     AT.abort = false;
+    if (AT.revert) {
+      // this action was started by key (g) while drawing shapes
+      // the action is completed - revert to original tool
+      // Also remove all selections
+      const { oldType, oldTool } = AT.revert;
+      AT.type = oldType;
+      AT.tool = oldTool;
+      AT.revert = null;
+      SelectedShapes.list = [];
+      SelectedShapes.show(divShapelist);
+      AT.type === "shape" ? shapesActive() : pointerActive();
+    }
   }
   SelectedShapes.ghost(gtx);
 }
@@ -523,25 +537,26 @@ function showGhost(e, gtx) {
 function chooseColor(e) {
   const t = /** @type {HTMLElement}*/ (e.target);
   if (t.title) {
-    AT.color = t.title;
-    SelectedShapes.update("c", AT.color);
+    if (Keys.has("Shift")) {
+      AT.fill = t.title;
+      SelectedShapes.update("f", AT.color);
+    } else {
+      AT.color = t.title;
+      SelectedShapes.update("c", AT.color);
+    }
+    AT.showfillAndColor();
     if (SelectedShapes.list.length > 0) {
       renderCanvas();
     }
   }
 }
 
-/**
- * Click on a color-swatch for background
- * @param {MouseEvent} e
- */
-function chooseFill(e) {
-  const t = /** @type {HTMLElement}*/ (e.target);
-  if (t.title) {
-    AT.fill = t.title;
-    SelectedShapes.update("f", AT.fill);
-    if (SelectedShapes.list.length > 0) {
-      renderCanvas();
-    }
+function adjustColors(div) {
+  if (Keys.has("ArrowLeft")) {
+    baseColor = (baseColor + 359) % 360;
   }
+  if (Keys.has("ArrowRight")) {
+    baseColor = (baseColor + 1) % 360;
+  }
+  div.innerHTML = makeSwatch(baseColor);
 }

@@ -77,6 +77,14 @@ class Vector extends Point {
   }
 
   /**
+   * Multiplies (scales) a vector with scalar
+   * @param {number} k real number
+   */
+  mult(k) {
+    return new Vector({ x: this.x * k, y: this.y * k });
+  }
+
+  /**
    * Calculates length of vector
    * @returns {number}
    */
@@ -106,6 +114,8 @@ class Shape extends Point {
     this.rot = 0.0; // No rotation - short name bcs save space in file, r=radius
     this.bb = { x, y, w: 0, h: 0 }; // adjust in subclass
     this.id = Shape.idx++;
+    this.center = { x, y }; // adjust in subclass
+    this.r = 1; // adjust in subclass
   }
   /**
    * Draw the figure on given canvas
@@ -113,15 +123,18 @@ class Shape extends Point {
    * @param {CanvasRenderingContext2D} ctx canvas to draw on
    */
   render(ctx) {
+    ctx.resetTransform();
     ctx.beginPath();
     ctx.strokeStyle = this.c;
     ctx.fillStyle = this.f;
-    ctx.translate(this.x, this.y);
+    ctx.save();
+    ctx.translate(this.center.x, this.center.y);
     ctx.rotate(this.rot);
-    ctx.translate(-this.x, -this.y);
+    ctx.translate(-this.center.x, -this.center.y);
     this.drawme(ctx);
     ctx.stroke();
     ctx.fill();
+    ctx.restore();
   }
   /**
    * Subclass shape drawing function - must override
@@ -144,6 +157,18 @@ class Shape extends Point {
     this.bb.y = this.y;
   }
 
+  centered() {
+    console.log("Overide in subclass");
+  }
+
+  rotate(d) {
+    this.rot += (d.x / 30) % (2 * Math.PI);
+  }
+
+  scale(d) {
+    console.log("override scale in subclass");
+  }
+
   get info() {
     const { x, y, c, f } = this;
     return `<div>${this.constructor.name} {x:${x} y:${y}} 
@@ -152,7 +177,7 @@ class Shape extends Point {
   }
 
   /**
-   * Returns true if two shapes overlap, this and b
+   * Returns true if this shape overlaps bounding box b
    * @param {Object} b
    * @param {number} b.x xpos
    * @param {number} b.y xpos
@@ -164,6 +189,20 @@ class Shape extends Point {
     return (
       a.x > b.x - a.w && a.x < b.x + b.w && a.y > b.y - a.h && a.y < b.y + b.h
     );
+  }
+
+  /**
+   * True if this shape touches/overlaps b
+   * @param {Object} b other shape
+   * @param {Object} b.center
+   * @param {number} b.center.x xpos
+   * @param {number} b.center.y ypos
+   * @param {number} b.r radius
+   */
+  touching(b) {
+    const a = this;
+    const diff = new Vector(a.center).sub(new Vector(b.center));
+    return diff.length < a.r + b.r;
   }
 }
 
@@ -187,6 +226,7 @@ class Square extends Shape {
     this.w = w;
     this.h = h;
     this.bb = { x, y, w, h };
+    this.centered();
   }
   /**
    * Draw the figure on given canvas
@@ -199,6 +239,22 @@ class Square extends Shape {
     ctx.lineTo(this.x + this.w, this.y + this.h);
     ctx.lineTo(this.x, this.y + this.h);
     ctx.closePath();
+  }
+
+  /**
+   * Calcs center for touching
+   */
+  centered() {
+    const { x, y, w, h } = this;
+    const diag = new Vector({ x: w, y: h });
+    this.r = diag.length / 2;
+    this.center = diag.mult(0.5).add({ x, y });
+  }
+  scale(d) {
+    const s = Math.max(1+d.x / 100,1/this.w,1/this.h);
+    this.w *= s;
+    this.h *= s;
+    this.centered();
   }
 }
 
@@ -222,6 +278,7 @@ class Circle extends Shape {
     super({ x, y, c, f });
     this.r = r;
     this.bb = { x: x - r, y: y - r, w: r + r, h: r + r };
+    this.center = { x, y };
   }
   /**
    * Draw the figure on given canvas
@@ -236,5 +293,13 @@ class Circle extends Shape {
     this.y += d.y;
     this.bb.x = this.x - this.r;
     this.bb.y = this.y - this.r;
+  }
+  centered() {
+    const { x, y } = this;
+    this.center = { x, y };
+  }
+  scale(d) {
+    const s = Math.max(1 + d.x / 100, 1/this.r);
+    this.r *= s;
   }
 }
