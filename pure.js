@@ -73,14 +73,21 @@ const hex2rgb = (color) =>
     .reduce((s, v, i) => ((s["rgb".charAt(i)] = v), s), {});
 
 /**
- * Generate a scale from dark to light
- * @param {hsv} start color
- * @param {number} n 
+ * Generate a scale from starting hsv
+ * @param {hsv} color 
+ * @param {number} n divide the range into this many slices
+ * @param {string} key h,s,v
+ * @param {number} m return this many colors m<=n
  */
-const vscale = ({h,s,v},n) => {
-    // generates n values starting at hsv by stepping v from 0 to 1
-    const d = 1/n;
-    return Array(n).fill(0).map((e,i) => ({h,s,v:d*i}));
+const scale = ({h,s,v},n,key,m=n) => {
+    // generates n values based on hsv
+    const d = (key === 'h') ? 360/n: 1/n;
+    const base = (key ==='h') ? h : 0;
+    return Array(n).fill(0).map((e,i) => {
+      const c = {h,s,v};
+      c[key] = (base + d*i) % 360;
+      return c;
+    }).slice(0,m);
 }    
 
 const rgb2div = rgb => `<div title="#${rgb2hex(rgb)}" 
@@ -114,8 +121,17 @@ const makeSwatch = (start) => {
     }
     s += "</div>";
   });
+  // create a grayscale, a gray color scale and a neighbour scale
+  // grayscale is independent of base color
+  // gray color scale takes base color and goes grayish
+  // neighbour scale finds four neighbours to left and right around base
+  //   the base color will be in the middle
+  //   can thus move left/right round the color-ring by
+  //   placing pointer on a neighbour and pressing Home-key
   s += "<div>";
-  s += vscale({h:0,s:0,v:0},9).map(hsv2rgb).map(rgb2div).join("");
+  s += scale({h:0,s:0,v:0},9,'v',9).map(hsv2rgb).map(rgb2div).join("");
+  s += scale({h:start,s:0,v:0.7},9,'s',9).map(hsv2rgb).map(rgb2div).join("");
+  s += scale({h:(start+200) % 360,s:1,v:1},9,'h',9).map(hsv2rgb).map(rgb2div).join("");
   s += "</div>";
   return s;
 };

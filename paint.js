@@ -62,8 +62,8 @@ function setup() {
   B = canCanvas.getBoundingClientRect(); // x,y for top left corner of canvas
 
   AT.showfillAndColor = () => {
-    current.style.color = AT.color;
-    current.style.backgroundColor = AT.fill;
+    //current.style.color = AT.color;
+    //current.style.backgroundColor = AT.fill;
   };
 
   divColors.innerHTML = makeSwatch(baseColor);

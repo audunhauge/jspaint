@@ -4,7 +4,7 @@
  * @file Shapes - class definitions for drawing shapes on a canvas. Shape is base class for Square and Circle.
  */
 
-/**
+/** 
  * Handles keypress - can check if(Keys.has("ArrowDown"))
  */
 class Keys {

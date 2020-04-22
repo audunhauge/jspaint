@@ -1,7 +1,7 @@
 // @ts-check
 
 /**
- * @file ActionTools
+ * @file ActionTools 
  * Mostly static classes for Tools, SelectedShapes, MakeShapes
  * Performs user-selected actions like adding new shapes, moving and deleting.
  */
@@ -539,9 +539,11 @@ function chooseColor(e) {
   if (t.title) {
     if (Keys.has("Shift")) {
       AT.fill = t.title;
+      document.documentElement.style.setProperty('--fill',AT.fill);
       SelectedShapes.update("f", AT.color);
     } else {
       AT.color = t.title;
+      document.documentElement.style.setProperty('--line',AT.color);
       SelectedShapes.update("c", AT.color);
     }
     AT.showfillAndColor();

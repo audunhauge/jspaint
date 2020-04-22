@@ -1,7 +1,7 @@
 // @ts-check
 
 /**
- * @file ActionKeys
+ * @file ActionKeys 
  * Static classes for handling key-actions
  * Key-activated tools like g(grab) s(scale) r(rotate)
  */
