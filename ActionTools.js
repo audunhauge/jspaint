@@ -574,13 +574,13 @@ function chooseColor(e) {
   const t = /** @type {HTMLElement}*/ (e.target);
   if (t.title) {
     if (Keys.has("Shift")) {
-      AT.fill = t.title;
-      document.documentElement.style.setProperty("--fill", AT.fill);
-      SelectedShapes.update("f", AT.color);
-    } else {
       AT.color = t.title;
       document.documentElement.style.setProperty("--line", AT.color);
       SelectedShapes.update("c", AT.color);
+    } else {
+      AT.fill = t.title;
+      document.documentElement.style.setProperty("--fill", AT.fill);
+      SelectedShapes.update("f", AT.color);
     }
     AT.showfillAndColor();
     if (SelectedShapes.list.length > 0) {
