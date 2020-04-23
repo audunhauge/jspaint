@@ -2,7 +2,7 @@
 
 /**
  * @file ActionKeys 
- * Static classes for handling key-actions
+ * Static classes for handling key-actions 
  * Key-activated tools like g(grab) s(scale) r(rotate)
  */
 
@@ -62,8 +62,8 @@ class SimpleKeyAction {
     const oldType = AT.type;
     if (SelectedShapes.list.length === 0) {
       // select shape under pointer
-      const bb = { center: AT.mouse, r: 1 };
-      const inside = drawings.filter(e => e.touching(bb));
+      const p = AT.mouse;
+      const inside = drawings.filter(e => e.contains(p));
       if (inside.length > 0) {
         SelectedShapes.list = inside.slice(-1);
         AT.revert = { oldTool, oldType };

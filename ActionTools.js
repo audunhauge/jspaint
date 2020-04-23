@@ -1,7 +1,7 @@
 // @ts-check
 
 /**
- * @file ActionTools 
+ * @file ActionTools
  * Mostly static classes for Tools, SelectedShapes, MakeShapes
  * Performs user-selected actions like adding new shapes, moving and deleting.
  */
@@ -33,7 +33,7 @@ class AT {
   static abort = false;
   static mouse = null;
   static revert = null;
-  static showfillAndColor;  // see setup()
+  static showfillAndColor; // see setup()
 }
 
 /**
@@ -59,7 +59,7 @@ class SelectedShapes {
    */
   static show(elm) {
     SelectedShapes._clean(); // remove dupes
-    const s = SelectedShapes.list.map(e => e.info).join("");
+    const s = SelectedShapes.list.map((e) => e.info).join("");
     elm.innerHTML = s;
   }
   /**
@@ -112,6 +112,37 @@ function makeShape(ctx, gtx, start, end) {
  * Also show outline on ghost while selectiong/moving
  */
 class MakeShapes {
+  /**
+   * @param {Object} init
+   * @param {CanvasRenderingContext2D} init.ctx canvas
+   * @param {Object} init.start startpos
+   * @param {Object} init.start.y ypos
+   * @param {Object} init.start.x xpos
+   * @param {Object} init.end end position
+   * @param {Object} init.end.y ypos
+   * @param {Object} init.end.x xpos
+   * @returns {Shape|undefined}
+   */
+  static polygon({ ctx, start, end }) {
+    let shape;
+    const c = AT.color;
+    const f = AT.fill;
+    const { x, y } = start;
+    const P = new Vector(start);
+    const Q = new Vector(end);
+    const wh = P.sub(Q);
+    const w = Math.abs(wh.x);
+    const h = Math.abs(wh.y);
+    const realpoints = xyList2Points([x, y, x + w, y, x + w, y + h, x, y + h]);
+    if (h > 0 && w > 0) {
+      const { x, y } = findCentroid(realpoints);
+      // points is now delta relative to {x,y}
+      const points = realpoints.map((e) => ({ x: e.x - x, y: e.y - y }));
+      shape = new Polygon({ x, y, points, c, f });
+      shape.render(ctx);
+    }
+    return shape;
+  }
   /**
    * @param {Object} init
    * @param {CanvasRenderingContext2D} init.ctx canvas
@@ -321,7 +352,7 @@ class Tools {
     if (drawings.length > 0) {
       drawings.pop();
       renderAll(ctx);
-      SelectedShapes.list = SelectedShapes.list.filter(e =>
+      SelectedShapes.list = SelectedShapes.list.filter((e) =>
         drawings.includes(e)
       );
       SelectedShapes.show(divShapelist);
@@ -329,7 +360,7 @@ class Tools {
     }
   }
 
-  static polygon({}) {}
+  // static polygon({}) {}
 
   static polyline({}) {}
 
@@ -419,12 +450,17 @@ function endAction(e, divShapelist, canCanvas, ctx, gtx) {
           const wh = Q.sub(P);
           const r = Math.round(wh.length * 10) / 10;
           const bb = { center: AT.start, r };
-          const inside = drawings.filter(e => e.touching(bb));
-          if (Keys.has("Shift")) {  // extend selection
-            SelectedShapes.list = SelectedShapes.list.concat(inside)
-          } else  if (Keys.has("Control")) {  // reduce
-            SelectedShapes.list = SelectedShapes.list.filter(e => !inside.includes(e));
-          } else {  // make new
+          const inside = drawings.filter((e) => e.touching(bb));
+          if (Keys.has("Shift")) {
+            // extend selection
+            SelectedShapes.list = SelectedShapes.list.concat(inside);
+          } else if (Keys.has("Control")) {
+            // reduce
+            SelectedShapes.list = SelectedShapes.list.filter(
+              (e) => !inside.includes(e)
+            );
+          } else {
+            // make new
             SelectedShapes.list = inside;
           }
           SelectedShapes.show(divShapelist);
@@ -459,19 +495,19 @@ function endAction(e, divShapelist, canCanvas, ctx, gtx) {
           canCanvas.classList.remove("move");
         }
         if (AT.tool === "scale") {
-            // a scale tool has moved from start to end
-            const p1 = new Vector(AT.start);
-            const p2 = new Vector(AT.end);
-            const diff = p2.sub(p1);
-            if (diff.length > 1) {
-              for (const s of SelectedShapes.list) {
-                s.scale(diff);
-              }
-              renderAll(ctx);
+          // a scale tool has moved from start to end
+          const p1 = new Vector(AT.start);
+          const p2 = new Vector(AT.end);
+          const diff = p2.sub(p1);
+          if (diff.length > 1) {
+            for (const s of SelectedShapes.list) {
+              s.scale(diff);
             }
-            AT.tool = "select";
-            canCanvas.classList.remove("move");
+            renderAll(ctx);
           }
+          AT.tool = "select";
+          canCanvas.classList.remove("move");
+        }
         break;
       }
       case "shape": {
@@ -486,7 +522,7 @@ function endAction(e, divShapelist, canCanvas, ctx, gtx) {
       }
     }
   }
-  canCanvas.removeEventListener("mousemove", e => showGhost(e, gtx));
+  canCanvas.removeEventListener("mousemove", (e) => showGhost(e, gtx));
   if (AT.tool !== "pgon") {
     cleanGhost();
     AT.start = null;
@@ -539,11 +575,11 @@ function chooseColor(e) {
   if (t.title) {
     if (Keys.has("Shift")) {
       AT.fill = t.title;
-      document.documentElement.style.setProperty('--fill',AT.fill);
+      document.documentElement.style.setProperty("--fill", AT.fill);
       SelectedShapes.update("f", AT.color);
     } else {
       AT.color = t.title;
-      document.documentElement.style.setProperty('--line',AT.color);
+      document.documentElement.style.setProperty("--line", AT.color);
       SelectedShapes.update("c", AT.color);
     }
     AT.showfillAndColor();

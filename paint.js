@@ -106,7 +106,7 @@ function setup() {
     keyAction(e, canCanvas, ctx, divShapelist)
   );
 
-  /**
+  /** 
    * Handle mouse-down on canvas
    * @instance test
    * @param {MouseEvent} e
