@@ -5,7 +5,7 @@
  */
 
 /**
- * Handles keypress - can check if(Keys.has("ArrowDown"))
+ * Handles keypress - can check if(Keys.has("ArrowDown")) 
  */
 class Keys {
   static _keys = new Set();
@@ -122,6 +122,7 @@ class Shape extends Point {
     this.id = Shape.idx++;
     this.center = { x, y }; // adjust in subclass
     this.r = 1; // adjust in subclass
+    this.points = [];
   }
   /**
    * Draw the figure on given canvas
@@ -179,7 +180,7 @@ class Shape extends Point {
 
   get info() {
     const { x, y, c, f } = this;
-    return `<div>${this.constructor.name} {x:${x} y:${y}} 
+    return `<div>${this.constructor.name} 
                   <span style="color:${this.c};background:${this.f}">⬜</span>
               </div>`;
   }
@@ -191,13 +192,6 @@ class Shape extends Point {
    */
   isa(name) {
     return name === this.type;
-  }
-
-  // ****  now some virtual functions
-  // ****  expect subclass to override
-
-  centered() {
-    console.log("Override in subclass");
   }
 
   scale(d) {
@@ -218,6 +212,15 @@ class Shape extends Point {
  * and a list of points (dx,dy) relative to this center
  */
 class Polygon extends Shape {
+  /**
+   * Construct a square given x,y and w,h, c is color
+   * @param {Object} init parameters for the shape
+   * @param {number} init.x xpos
+   * @param {number} init.y ypos
+   * @param {Array.<Point>} init.points
+   * @param {string} init.c color
+   * @param {string} init.f color
+   */
   constructor({ x, y, points, c = "red", f = "blue" }) {
     super({ x, y, c, f });
     this.points = points;
@@ -249,70 +252,25 @@ class Polygon extends Shape {
     return polygonPoint(this.polygon, p);
   }
 
-  rotate(d) {
-    
-  }
-}
-
-/**
- * A square shape
- * @extends Shape
- */
-class Square extends Shape {
-  /**
-   * Construct a square given x,y and w,h, c is color
-   * @param {Object} init parameters for the shape
-   * @param {number} init.x xpos
-   * @param {number} init.y ypos
-   * @param {number} init.w width
-   * @param {number} init.h height
-   * @param {string} init.c color
-   * @param {string} init.f color
-   */
-  constructor({ x, y, w, h, c, f }) {
-    super({ x, y, c, f });
-    this.w = w;
-    this.h = h;
-    this.bb = { x, y, w, h };
-    this.centered();
-  }
-  /**
-   * Draw the figure on given canvas
-   * Move and Line as strokeRect cant be filled
-   * @param {CanvasRenderingContext2D} ctx canvas to draw on
-   */
-  drawme(ctx) {
-    ctx.moveTo(this.x, this.y);
-    ctx.lineTo(this.x + this.w, this.y);
-    ctx.lineTo(this.x + this.w, this.y + this.h);
-    ctx.lineTo(this.x, this.y + this.h);
-    ctx.closePath();
-    ctx.stroke();
-    ctx.fill();
+  rotate(d, modify) {
+    const angle = (d.x / 100) % (2 * Math.PI);
+    const sin = Math.sin(angle);
+    const cos = Math.cos(angle);
+    this.points = this.points.map(p => rotate(p, sin, cos))
   }
 
-  /**
-   * Calcs center for touching
-   */
-  centered() {
-    const { x, y, w, h } = this;
-    const diag = new Vector({ x: w, y: h });
-    this.r = diag.length / 2;
-    this.center = diag.mult(0.5).add({ x, y });
-  }
-  scale(d) {
-    const s = Math.max(1 + d.x / 100, 1 / this.w, 1 / this.h);
-    this.w *= s;
-    this.h *= s;
-    this.centered();
-  }
-  get type() {
-    return "Square";
+  scale(d, modify) {
+    const { points } = this;
+    const largest = points.reduce((s,p) => Math.max(s,Math.abs(p.x),Math.max(p.y)),0);
+    const s = Math.max(1 + d.x / 100, 1 / largest);
+    const sx = modify === "y" ? 1 : s;
+    const sy = modify === "x" ? 1 : s;
+    this.points = points.map(e => ({x:e.x*sx,y:e.y*sy}));
   }
 
-  get polygon() {
-    const a = this;
-    return [a.x, a.y, a.x + a.w, a.y, a.x + a.w, a.y + a.h, a.x, a.y + a.h];
+  move(d) {
+    this.x += d.x;
+    this.y += d.y;
   }
 }
 
@@ -344,6 +302,9 @@ class Circle extends Shape {
    */
   drawme(ctx) {
     ctx.arc(this.x, this.y, this.r, 0, 2 * Math.PI, false);
+    ctx.closePath();
+    ctx.stroke();
+    ctx.fill();
   }
   // must override move as bb needs adjusting for circle
   move(d) {
@@ -352,9 +313,13 @@ class Circle extends Shape {
     this.bb.x = this.x - this.r;
     this.bb.y = this.y - this.r;
   }
-  centered() {
-    const { x, y } = this;
-    this.center = { x, y };
+  get polygon() {
+    const {x,y,r} = this;
+    return [x-r,y-r,x+r,y-r,x+r,y+r,x-r,y+r];
+  }
+  
+  contains(p) {
+    return polygonPoint(this.polygon, p);
   }
   scale(d) {
     const s = Math.max(1 + d.x / 100, 1 / this.r);
@@ -362,5 +327,9 @@ class Circle extends Shape {
   }
   get type() {
     return "Circle";
+  }
+
+  rotate(d,modify) {
+
   }
 }

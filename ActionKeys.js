@@ -1,8 +1,8 @@
 // @ts-check
 
 /**
- * @file ActionKeys 
- * Static classes for handling key-actions 
+ * @file ActionKeys
+ * Static classes for handling key-actions
  * Key-activated tools like g(grab) s(scale) r(rotate)
  */
 
@@ -52,73 +52,25 @@ class SimpleKeyAction {
     cleanGhost();
   }
   static r({ canCanvas }) {
-    const moveState = () => {
-      AT.tool = "rotate";
-      AT.type = "pointer";
-      canCanvas.classList.add("move");
-      pointerActive();
-    };
-    const oldTool = AT.tool;
-    const oldType = AT.type;
-    if (SelectedShapes.list.length === 0) {
-      // select shape under pointer
-      const p = AT.mouse;
-      const inside = drawings.filter(e => e.contains(p));
-      if (inside.length > 0) {
-        SelectedShapes.list = inside.slice(-1);
-        AT.revert = { oldTool, oldType };
-        moveState();
-      }
-    } else {
-      moveState();
-    }
+    startKeyAction(canCanvas, "rotate");
   }
   static s({ canCanvas }) {
-    const moveState = () => {
-      AT.tool = "scale";
-      AT.type = "pointer";
-      canCanvas.classList.add("move");
-      pointerActive();
-    };
-    const oldTool = AT.tool;
-    const oldType = AT.type;
-    if (SelectedShapes.list.length === 0) {
-      // select shape under pointer
-      const bb = { center: AT.mouse, r: 1 };
-      const inside = drawings.filter(e => e.touching(bb));
-      if (inside.length > 0) {
-        SelectedShapes.list = inside.slice(-1);
-        AT.revert = { oldTool, oldType };
-        moveState();
-      }
-    } else {
-      moveState();
-    }
+    startKeyAction(canCanvas, "scale");
   }
   static g({ canCanvas }) {
-    const moveState = () => {
-      AT.tool = "move";
-      AT.type = "pointer";
-      canCanvas.classList.add("move");
-      pointerActive();
-    };
-    const oldTool = AT.tool;
-    const oldType = AT.type;
-    if (SelectedShapes.list.length === 0) {
-      // select shape under pointer
-      const bb = { center: AT.mouse, r: 1 };
-      const inside = drawings.filter(e => e.touching(bb));
-      if (inside.length > 0) {
-        SelectedShapes.list = inside.slice(-1);
-        AT.revert = { oldTool, oldType };
-        moveState();
-      }
-    } else {
-      moveState();
+    startKeyAction(canCanvas, "move");
+  }
+  static y({ ctx, divShapelist }) {
+    if (AT.tool === "scale") {
+      AT.modify = "y";
     }
   }
   static x({ ctx, divShapelist }) {
-    drawings = drawings.filter(e => !SelectedShapes.list.includes(e));
+    if (AT.tool === "scale") {
+      AT.modify = "x";
+      return;
+    }
+    drawings = drawings.filter((e) => !SelectedShapes.list.includes(e));
     renderAll(ctx);
     SelectedShapes.list = [];
     SelectedShapes.show(divShapelist);
@@ -128,8 +80,8 @@ class SimpleKeyAction {
     SimpleKeyAction.ArrowLeft({});
   }
   static ArrowLeft({}) {
-    const {x,y} = mouse;  // global mouse coords
-    const d = document.elementFromPoint(x,y);
+    const { x, y } = mouse; // global mouse coords
+    const d = document.elementFromPoint(x, y);
     if (d?.id === "canvas") {
       console.log("prev-color");
     }
@@ -142,8 +94,8 @@ class SimpleKeyAction {
   // pick up color from swatch under pointer
   // and set as baseColor
   static Home({}) {
-    const {x,y} = mouse;  // global mouse coords
-    const d = document.elementFromPoint(x,y);
+    const { x, y } = mouse; // global mouse coords
+    const d = document.elementFromPoint(x, y);
     // @ts-ignore
     if (d?.title) {
       // color-swatches have title
@@ -153,6 +105,40 @@ class SimpleKeyAction {
       baseColor = hsv.h;
       swatchAdjust();
     }
+  }
+}
+
+/**
+ * Show that we are moving/scaling/rotating etc
+ * @param {HTMLElement} canCanvas
+ * @param {string} action
+ */
+const moveState = (canCanvas, action) => {
+  AT.tool = action;
+  AT.type = "pointer";
+  canCanvas.classList.add("move");
+  pointerActive();
+};
+
+/**
+ * Sets up for a key action - will complete on mouseUp
+ * @param {HTMLElement} canCanvas
+ * @param {string} action
+ */
+function startKeyAction(canCanvas, action) {
+  const oldTool = AT.tool;
+  const oldType = AT.type;
+  if (SelectedShapes.list.length === 0) {
+    // select shape under pointer
+    const p = AT.mouse;
+    const inside = drawings.filter((e) => e.contains(p));
+    if (inside.length > 0) {
+      SelectedShapes.list = inside.slice(-1);
+      AT.revert = { oldTool, oldType };
+      moveState(canCanvas, action);
+    }
+  } else {
+    moveState(canCanvas, action);
   }
 }
 

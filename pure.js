@@ -1,7 +1,7 @@
 // @ts-check
 // only pure functions
 
-/**
+/** 
  * @typedef {Object} hsv
  * @property {number} hsv.h
  * @property {number} hsv.s
@@ -158,7 +158,6 @@ const makeSwatch = (start) => {
  * @param {Array.<number>} points2 [x1,y1,x2,y2,...]
  * @returns {boolean} true if they overlap
  */
-
 function polygonPolygon(points1, points2) {
   let a = points1;
   let b = points2;
@@ -301,22 +300,53 @@ function polygonPoint(points, { x, y }) {
 }
 
 /**
- * Rotates point p angle rads around point c
+ * Rotates point p angle rads around origo
  * @param {number} sin Math.sin(angle)
  * @param {number} cos Math.cos(angle)
  * @param {Point} p point to rotate
- * @param {Point} c center of rotation
  */
-function rotate(p, c, sin, cos) {
+function rotate(p, sin, cos) {
   let {x,y} = p;
   // translate point back to origin:
-  x -= c.x;
-  y -= c.y;
-  // rotate point
-  x = (x * cos - y * sin) + c.x;
-  y = (x * sin + y * cos) + c.y;
-  // translate point back:
-  p.x = xnew + c.x;
-  p.y = ynew + c.y;
-  return p;
+  // rotate point and translate back
+  const nx = (x * cos - y * sin);
+  const ny = (x * sin + y * cos);
+  return {x:nx,y:ny};
 }
+
+
+/**
+ * Draws a rounded rect
+ * @param {number} x
+ * @param {number} y
+ * @param {number} width
+ * @param {number} height
+ * @param {number} radius
+ */
+function _roundRect(x, y, width, height, radius) {
+  if (width < 2 * radius) radius = width / 2;
+  if (height < 2 * radius) radius = height / 2;
+  this.beginPath();
+  this.moveTo(x + radius, y);
+  this.arcTo(x + width, y, x + width, y + height, radius);
+  this.arcTo(x + width, y + height, x, y + height, radius);
+  this.arcTo(x, y + height, x, y, radius);
+  this.arcTo(x, y, x + width, y, radius);
+  this.closePath();
+  return this;
+}
+
+/**
+ * Converts hex "string" to rgba contrast color, 0.5 alpha
+ * @param {string} rgbHex like "ff0000" for blue
+ */
+function contrast(rgbHex) {
+    const contrast = rgb2hsv(hex2rgb(rgbHex));
+    contrast.h = (contrast.h + 180) % 360;
+    const { r, g, b } = hsv2rgb(contrast);
+    return `rgba(${r},${g},${b},0.5)`; // fill color contrast
+}
+
+// extend 2d context with this function
+// @ts-ignore
+CanvasRenderingContext2D.prototype.roundRect = _roundRect;

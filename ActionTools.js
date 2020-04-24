@@ -18,6 +18,7 @@
  * @property {String}  color  - line color
  * @property {String}  fill  - fill color
  * @property {String}  type  - "pointer"|"shape"
+ * @property {String}  modify  - "x"|"y"|""
  * @property {Boolean}  abort  - true if Escape pressed
  * @property {Point|null}  mouse  - Set by mousemove on canvas
  * @property {Object|null} revert  - go back to this tool after single action
@@ -30,6 +31,7 @@ class AT {
   static color = "blue";
   static fill = "transparent";
   static type = "pointer";
+  static modify = "";
   static abort = false;
   static mouse = null;
   static revert = null;
@@ -44,6 +46,13 @@ class AT {
  */
 class SelectedShapes {
   static list = [];
+
+  /**
+   * No shapes selected
+   */
+  static empty() {
+    SelectedShapes.list = [];
+  }
 
   /**
    * Ensures any shape is only selected once
@@ -64,13 +73,14 @@ class SelectedShapes {
   }
   /**
    * Hilite selected elements
+   * This is before any action is applied
    * @param {CanvasRenderingContext2D} ctx
    */
   static ghost(ctx) {
     for (const s of SelectedShapes.list) {
       const { c, f } = s;
-      s.c = "red";
-      s.f = "rgba(0,0,250,0.2)";
+      s.c = contrast(s.c.substr(1));
+      s.f = contrast(s.f.substr(1));
       s.render(ctx);
       s.c = c;
       s.f = f;
@@ -86,6 +96,10 @@ class SelectedShapes {
       s[what] = color;
     }
   }
+  /**
+   * If more than 1 element in list
+   * then create a bounding box for all
+   */
 }
 
 /**
@@ -108,196 +122,37 @@ function makeShape(ctx, gtx, start, end) {
 }
 
 /**
- * Create a shape and render on given context.<br>
- * Also show outline on ghost while selectiong/moving
+ * Show a ghost shape while transforming selected
+ * For rotate we show bounding box of selected shapes
+ * @param {Vector} diff change in position
+ * @param {string} action
+ * @param {CanvasRenderingContext2D} gtx
  */
-class MakeShapes {
-  /**
-   * @param {Object} init
-   * @param {CanvasRenderingContext2D} init.ctx canvas
-   * @param {Object} init.start startpos
-   * @param {Object} init.start.y ypos
-   * @param {Object} init.start.x xpos
-   * @param {Object} init.end end position
-   * @param {Object} init.end.y ypos
-   * @param {Object} init.end.x xpos
-   * @returns {Shape|undefined}
-   */
-  static polygon({ ctx, start, end }) {
-    let shape;
-    const c = AT.color;
-    const f = AT.fill;
-    const { x, y } = start;
-    const P = new Vector(start);
-    const Q = new Vector(end);
-    const wh = P.sub(Q);
-    const w = Math.abs(wh.x);
-    const h = Math.abs(wh.y);
-    const realpoints = xyList2Points([x, y, x + w, y, x + w, y + h, x, y + h]);
-    if (h > 0 && w > 0) {
-      const { x, y } = findCentroid(realpoints);
-      // points is now delta relative to {x,y}
-      const points = realpoints.map((e) => ({ x: e.x - x, y: e.y - y }));
-      shape = new Polygon({ x, y, points, c, f });
-      shape.render(ctx);
+function shapeAction(diff, action, gtx) {
+  if (SelectedShapes.list.length > 1 && action === "rotate") {
+    const realpoints = SelectedShapes.list.map(e => ({x:e.x,y:e.y}));
+    const { x, y } = findCentroid(realpoints);
+    // points is now delta relative to {x,y}
+    const points = realpoints.map((e) => ({ x: e.x - x, y: e.y - y }));
+    const shape = new Polygon({
+      x,
+      y,
+      points,
+      c: "red",
+      f: "rgba(255,0,0,0.1)",
+    });
+    shape[action](diff, AT.modify);
+    shape.render(gtx);
+  } else {
+    for (const s of SelectedShapes.list) {
+      const { x, y, c, f, points, r } = s;
+      s.points = points.map(({ x, y }) => ({ x, y }));
+      s.c = contrast(s.c.substr(1));
+      s.f = contrast(s.f.substr(1));
+      s[action](diff, AT.modify);
+      s.render(gtx);
+      Object.assign(s, { x, y, c, f, points, r });
     }
-    return shape;
-  }
-  /**
-   * @param {Object} init
-   * @param {CanvasRenderingContext2D} init.ctx canvas
-   * @param {Object} init.start startpos
-   * @param {Object} init.start.y ypos
-   * @param {Object} init.start.x xpos
-   * @param {Object} init.end end position
-   * @param {Object} init.end.y ypos
-   * @param {Object} init.end.x xpos
-   * @returns {Shape|undefined}
-   */
-  static square({ ctx, start, end }) {
-    let shape;
-    const c = AT.color;
-    const f = AT.fill;
-    const { x, y } = start;
-    const P = new Vector(start);
-    const Q = new Vector(end);
-    const wh = P.sub(Q);
-    const w = Math.abs(wh.x);
-    const h = Math.abs(wh.y);
-    if (h > 0 && w > 0) {
-      shape = new Square({ x, y, w, h, c, f });
-      shape.render(ctx);
-    }
-    return shape;
-  }
-  /**
-   * @param {Object} init
-   * @param {CanvasRenderingContext2D} init.ctx canvas
-   * @param {Object} init.start startpos
-   * @param {Object} init.start.y ypos
-   * @param {Object} init.start.x xpos
-   * @param {Object} init.end end position
-   * @param {Object} init.end.y ypos
-   * @param {Object} init.end.x xpos
-   * @returns {Shape|undefined}
-   */
-  static circle({ ctx, start, end }) {
-    let shape;
-    const c = AT.color;
-    const f = AT.fill;
-    const { x, y } = start;
-    const P = new Vector(start);
-    const Q = new Vector(end);
-    const wh = P.sub(Q);
-    const r = Math.round(wh.length * 10) / 10;
-    if (r > 1) {
-      shape = new Circle({ x, y, r, c, f });
-      shape.render(ctx);
-    }
-    return shape;
-  }
-  /**
-   * @param {Object} init
-   * @param {CanvasRenderingContext2D} init.ctx ghost
-   * @param {Object} init.start startpos
-   * @param {Object} init.start.y ypos
-   * @param {Object} init.start.x xpos
-   * @param {Object} init.end end position
-   * @param {Object} init.end.y ypos
-   * @param {Object} init.end.x xpos
-   * @returns {undefined}
-   */
-  static select({ ctx, start, end }) {
-    {
-      const { x, y } = start;
-      const P = new Vector(start);
-      const Q = new Vector(end);
-      const wh = Q.sub(P);
-      const r = Math.round(wh.length * 10) / 10;
-      if (r > 1) {
-        const marker = new Circle({ x, y, r, c: "gray", f: "transparent" });
-        marker.render(ctx);
-      }
-    }
-    return undefined;
-  }
-  /**
-   * @param {Object} init
-   * @param {CanvasRenderingContext2D} init.gtx canvas
-   * @returns {undefined}
-   */
-  static move({ gtx }) {
-    const p1 = new Vector(AT.start);
-    const p2 = new Vector(AT.end);
-    const diff = p2.sub(p1);
-    if (diff.length > 1) {
-      cleanGhost();
-      for (const s of SelectedShapes.list) {
-        const { x, y, c, f, rot } = s;
-        // must make a 1 level deeper copy of bb
-        let bb;
-        {
-          const { x, y, w, h } = s.bb;
-          bb = { x, y, w, h };
-        }
-        s.rot = 0;
-        s.c = "red";
-        s.f = "rgba(250,0,0,0.1)";
-        s.move(diff);
-        s.render(gtx);
-        Object.assign(s, { x, y, bb, c, f, rot });
-        // s should remain unchanged
-      }
-    }
-    return undefined;
-  }
-  /**
-   * @param {Object} init
-   * @param {CanvasRenderingContext2D} init.gtx canvas
-   * @returns {undefined}
-   */
-  static rotate({ gtx }) {
-    const p1 = new Vector(AT.start);
-    const p2 = new Vector(AT.end);
-    const diff = p2.sub(p1);
-    if (diff.length > 1) {
-      cleanGhost();
-      for (const s of SelectedShapes.list) {
-        const { c, f, rot } = s;
-        s.c = "red";
-        s.f = "rgba(250,0,0,0.1)";
-        s.rotate(diff);
-        s.render(gtx);
-        Object.assign(s, { c, f, rot });
-        // s should remain unchanged
-      }
-    }
-    return undefined;
-  }
-  static scale({ gtx }) {
-    const p1 = new Vector(AT.start);
-    const p2 = new Vector(AT.end);
-    const diff = p2.sub(p1);
-    if (diff.length > 1) {
-      cleanGhost();
-      for (const s of SelectedShapes.list) {
-        const { x, y, c, f, rot, w, h, r } = s;
-        // must make a 1 level deeper copy of bb
-        let bb;
-        {
-          const { x, y, w, h } = s.bb;
-          bb = { x, y, w, h };
-        }
-        s.rot = 0;
-        s.c = "red";
-        s.f = "rgba(250,0,0,0.1)";
-        s.scale(diff);
-        s.render(gtx);
-        Object.assign(s, { x, y, bb, c, f, rot, w, h, r });
-        // s should remain unchanged
-      }
-    }
-    return undefined;
   }
 }
 
@@ -360,10 +215,6 @@ class Tools {
     }
   }
 
-  // static polygon({}) {}
-
-  static polyline({}) {}
-
   static move({ t }) {
     AT.type = "pointer";
     Tools.default(t);
@@ -384,31 +235,6 @@ class Tools {
     }
   }
 }
-
-/**
- * Draws a rounded rect
- * @param {number} x
- * @param {number} y
- * @param {number} width
- * @param {number} height
- * @param {number} radius
- */
-function _roundRect(x, y, width, height, radius) {
-  if (width < 2 * radius) radius = width / 2;
-  if (height < 2 * radius) radius = height / 2;
-  this.beginPath();
-  this.moveTo(x + radius, y);
-  this.arcTo(x + width, y, x + width, y + height, radius);
-  this.arcTo(x + width, y + height, x, y + height, radius);
-  this.arcTo(x, y + height, x, y, radius);
-  this.arcTo(x, y, x + width, y, radius);
-  this.closePath();
-  return this;
-}
-
-// extend 2d context with this function
-// @ts-ignore
-CanvasRenderingContext2D.prototype.roundRect = _roundRect;
 
 /**
  * Draws all shapes from drawings onto canvas, cleans ghost
@@ -445,12 +271,22 @@ function endAction(e, divShapelist, canCanvas, ctx, gtx) {
           // a select tool has drawn a square
           // find any shape that overlaps
           // and show them in shapelist
+          const { x, y } = AT.start;
           const P = new Vector(AT.start);
           const Q = new Vector(AT.end);
-          const wh = Q.sub(P);
-          const r = Math.round(wh.length * 10) / 10;
-          const bb = { center: AT.start, r };
-          const inside = drawings.filter((e) => e.touching(bb));
+          const wh = P.sub(Q);
+          const w = Math.abs(wh.x);
+          const h = Math.abs(wh.y);
+          let inside;
+          if (h * w > 9) {
+            const capturePolygon = [x, y, x + w, y, x + w, y + h, x, y + h];
+            inside = drawings.filter((e) =>
+              polygonPolygon(capturePolygon, e.polygon)
+            );
+          } else {
+            const p = AT.start;
+            inside = drawings.filter((e) => e.contains(p));
+          }
           if (Keys.has("Shift")) {
             // extend selection
             SelectedShapes.list = SelectedShapes.list.concat(inside);
@@ -461,52 +297,12 @@ function endAction(e, divShapelist, canCanvas, ctx, gtx) {
             );
           } else {
             // make new
+            SelectedShapes.empty();
             SelectedShapes.list = inside;
           }
           SelectedShapes.show(divShapelist);
-        }
-        if (AT.tool === "move") {
-          // a move tool has moved from start to end
-          const p1 = new Vector(AT.start);
-          const p2 = new Vector(AT.end);
-          const diff = p2.sub(p1);
-          if (diff.length > 1) {
-            for (const s of SelectedShapes.list) {
-              s.move(diff);
-              s.centered();
-            }
-            renderAll(ctx);
-          }
-          AT.tool = "select";
-          canCanvas.classList.remove("move");
-        }
-        if (AT.tool === "rotate") {
-          // a rotate tool has moved from start to end
-          const p1 = new Vector(AT.start);
-          const p2 = new Vector(AT.end);
-          const diff = p2.sub(p1);
-          if (diff.length > 1) {
-            for (const s of SelectedShapes.list) {
-              s.rotate(diff);
-            }
-            renderAll(ctx);
-          }
-          AT.tool = "select";
-          canCanvas.classList.remove("move");
-        }
-        if (AT.tool === "scale") {
-          // a scale tool has moved from start to end
-          const p1 = new Vector(AT.start);
-          const p2 = new Vector(AT.end);
-          const diff = p2.sub(p1);
-          if (diff.length > 1) {
-            for (const s of SelectedShapes.list) {
-              s.scale(diff);
-            }
-            renderAll(ctx);
-          }
-          AT.tool = "select";
-          canCanvas.classList.remove("move");
+        } else {
+          completeAction(canCanvas, AT.tool);
         }
         break;
       }
@@ -535,12 +331,30 @@ function endAction(e, divShapelist, canCanvas, ctx, gtx) {
       AT.type = oldType;
       AT.tool = oldTool;
       AT.revert = null;
-      SelectedShapes.list = [];
+      SelectedShapes.empty();
       SelectedShapes.show(divShapelist);
       AT.type === "shape" ? shapesActive() : pointerActive();
     }
   }
   SelectedShapes.ghost(gtx);
+}
+
+function completeAction(canCanvas, action) {
+  const p1 = new Vector(AT.start);
+  const p2 = new Vector(AT.end);
+  const diff = p2.sub(p1);
+  if (diff.length > 1) {
+    if (action === "rotate" && SelectedShapes.list.length > 1) {
+      rotateGroup(diff);
+    }
+    for (const s of SelectedShapes.list) {
+      s[action](diff, AT.modify);
+    }
+  }
+  renderAll(ctx);
+  AT.tool = "select";
+  AT.modify = ""; // turn off modify (x|y)
+  canCanvas.classList.remove("move");
 }
 
 /**
@@ -597,4 +411,30 @@ function adjustColors(div) {
     baseColor = (baseColor + 1) % 360;
   }
   div.innerHTML = makeSwatch(baseColor);
+}
+
+/**
+ * A group of objects are to be rotated
+ * Create a polygon from centroids for all shapes
+ * Rotate all shapes around this centroid
+ */
+function rotateGroup(diff) {
+  const list = SelectedShapes.list;
+  const shapeCenters = list.map((s) => ({ x: s.x, y: s.y }));
+  const { x, y } = findCentroid(shapeCenters);
+  // points is now delta relative to {x,y}
+  const points = shapeCenters.map((e) => ({ x: e.x - x, y: e.y - y }));
+  const shape = new Polygon({
+    x,
+    y,
+    points,
+    c: "red",
+    f: "red",
+  });
+  shape.rotate(diff, AT.modify);
+  const newpoints = shape.points;
+  list.forEach((e, i) => {
+    e.x = x + newpoints[i].x;
+    e.y = y + newpoints[i].y;
+  });
 }

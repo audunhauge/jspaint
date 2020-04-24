@@ -23,6 +23,8 @@ let pointerActive; // function to check input:radio for pointers
 let shapesActive; // ditto for shapes
 let swatchAdjust;
 
+let ctx;
+
 const mouse = {}; // stores mouse pos for document
 
 /**
@@ -55,7 +57,7 @@ function setup() {
   const canGhost = /** @type {HTMLCanvasElement} */ (g("ghost"));
   const divColors = g("colors");
   const divShapelist = g("shapelist");
-  const ctx = canCanvas.getContext("2d");
+   ctx = canCanvas.getContext("2d");
   const gtx = canGhost.getContext("2d"); // preview next drawing operation
   const inpPointers = g("pointers"); // turned on by keys
   const inpShapes = g("shapes"); // turned on by keys
