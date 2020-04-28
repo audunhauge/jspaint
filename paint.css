@@ -12,6 +12,21 @@
   height: calc(100vh - 100px);
 }
 
+#newpage {
+  position: absolute;
+  width:400px;
+  height: 600px;
+  background-color: gainsboro;
+  border: solid gray 1px;
+  left: calc(50% - 100px);
+  top: 200px;
+  z-index: 30;
+}
+
+#newpage.hidden {
+  display:none;
+}
+
 #mixer,
 #fill,
 #shapelist,

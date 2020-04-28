@@ -15,7 +15,6 @@ class HomeBar extends HTMLElement {
           <div id="menu" tabindex="0">
               <i class="material-icons">menu</i>
               <ul>
-                <li data-link="/index">Home</li>
                 <slot><li>simple menu</li></slot>
               </ul>
           </div>
@@ -110,7 +109,9 @@ class HomeBar extends HTMLElement {
         if (t.localName === "li" && t.dataset.link) {
           let link = t.dataset.link;
           location.href = `${link}.html`;
-        } else this.dispatchEvent(new Event("menu"));
+        } else {
+          this.trigger({id:t.id, text:t.innerText});
+        }
       });
       this._root.querySelector("#info").addEventListener("click", e => {
         let t = e.target;
@@ -122,6 +123,16 @@ class HomeBar extends HTMLElement {
         .addEventListener("click", () =>
           this.dispatchEvent(new Event("username"))
         );
+    }
+
+    trigger(detail, eventname = 'menu') {
+      this.dispatchEvent(
+        new CustomEvent(eventname, {
+          bubbles: true,
+          composed: true,
+          detail
+        })
+      );
     }
   
     get info() {

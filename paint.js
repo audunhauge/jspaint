@@ -50,7 +50,6 @@ function setup() {
   cleanGhost = () => gtx.clearRect(0, 0, 1024, 800);
   cleanCanvas = () => ctx.clearRect(0, 0, 1024, 800);
 
-  const current = g("current");
   const divTools = g("tools");
   // cast from html-element to canvas
   const canCanvas = /** @type {HTMLCanvasElement} */ (g("canvas"));
@@ -62,6 +61,8 @@ function setup() {
   const inpPointers = g("pointers"); // turned on by keys
   const inpShapes = g("shapes"); // turned on by keys
   B = canCanvas.getBoundingClientRect(); // x,y for top left corner of canvas
+
+  document.addEventListener("menu",e => menuAction(e,ctx,gtx,divShapelist));
 
   divColors.innerHTML = makeSwatch(baseColor);
   swatchAdjust = () => adjustColors(divColors); // bind to divColors

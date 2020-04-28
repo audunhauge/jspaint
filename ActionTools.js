@@ -130,7 +130,7 @@ function makeShape(ctx, gtx, start, end) {
  * @param {CanvasRenderingContext2D} gtx
  */
 function shapeAction(diff, action, gtx) {
-  if (SelectedShapes.list.length > 1 && "rotatescale".includes(action)) {
+  if (SelectedShapes.list.length > 1 && "moverotatescale".includes(action)) {
     if (!AT.jarvisHull) {
       AT.jarvisHull = makeJarvisHullShape();
     }
@@ -180,6 +180,18 @@ function activateTool(e, ctx, gtx, divShapelist) {
 }
 
 /**
+ * Responds to a menu-event from the toolbar
+ * @param {CustomEvent} e 
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {HTMLElement} divShapelist
+ */
+function menuAction(e, ctx, gtx, divShapelist) {
+  const {detail} = e;
+  const text = detail?.text?.toLowerCase();
+  Tools[text]?.({ ctx, divShapelist });
+}
+
+/**
  * All tool methods are static functions of this class.
  * Similar to how Math is used to namespace all math-functions
  */
@@ -191,6 +203,7 @@ class Tools {
    * @param {HTMLElement} p.divShapelist div to show selected shapes on
    */
   static new({ ctx, divShapelist }) {
+    g("newpage").classList.remove("hidden");
     cleanGhost();
     cleanCanvas();
     AT.color = "blue";
