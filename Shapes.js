@@ -1,6 +1,6 @@
 // @ts-check
 
-/**
+/** 
  * @file Shapes - class definitions for drawing shapes on a canvas. Shape is base class for Square and Circle.
  */
 

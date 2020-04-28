@@ -63,11 +63,6 @@ function setup() {
   const inpShapes = g("shapes"); // turned on by keys
   B = canCanvas.getBoundingClientRect(); // x,y for top left corner of canvas
 
-  AT.showfillAndColor = () => {
-    //current.style.color = AT.color;
-    //current.style.backgroundColor = AT.fill;
-  };
-
   divColors.innerHTML = makeSwatch(baseColor);
   swatchAdjust = () => adjustColors(divColors); // bind to divColors
 

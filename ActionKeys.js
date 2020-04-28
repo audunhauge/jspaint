@@ -7,7 +7,7 @@
  */
 
 /**
- * @param {KeyboardEvent} e
+ * @param {KeyboardEvent} e 
  * @param {HTMLElement} canCanvas
  * @param {CanvasRenderingContext2D} ctx
  * @param {HTMLElement} divShapelist
@@ -128,6 +128,7 @@ const moveState = (canCanvas, action) => {
 function startKeyAction(canCanvas, action) {
   const oldTool = AT.tool;
   const oldType = AT.type;
+  AT.jarvisHull = null;
   if (SelectedShapes.list.length === 0) {
     // select shape under pointer
     const p = AT.mouse;

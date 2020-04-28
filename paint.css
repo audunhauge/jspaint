@@ -7,9 +7,9 @@
 #main {
   position: absolute;
   left:0;
-  top:0;
+  top:100px;
   width: 100vw;
-  height: 100vh;
+  height: calc(100vh - 100px);
 }
 
 #mixer,

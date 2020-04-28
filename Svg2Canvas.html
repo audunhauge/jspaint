@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title></title>
+</head>
+<body>
+    <!--
+        Shows how to convert from svg to canvas with js
+    -->
+<div id="svg-container">
+    <svg id="s10024_83676" width="500" viewBox="0 0  500 500"> 
+        <g transform="scale(1)">
+          <polygon points="45.45,295.45 454.55,295.45 409.09,166.89" stroke="blue" fill="none"></polygon><text font-size="90.9090909090909%" x="27.17" y="298.59"></text><text font-size="90.9090909090909%" x="465.68" y="303.33"></text><text font-size="90.9090909090909%" x="414.97" y="154.58">C</text><text font-size="90.9090909090909%" x="240.77" y="314.79" text-anchor="middle">a</text><text font-size="90.9090909090909%" x="445.26" y="228.87" text-anchor="start">b</text><text font-size="90.9090909090909%" x="216.14" y="223.30" text-anchor="end">c</text><circle cx="45.45" cy="295.45" r="3" fill="blue"></circle><circle cx="454.55" cy="295.45" r="3" fill="blue"></circle><circle cx="409.09" cy="166.89" r="3" fill="blue"></circle><circle cx="374.67" cy="238.97" r="56.48" stroke="blue" fill="none"></circle><circle cx="250" cy="295.45" r="204.55" stroke="blue" fill="none"></circle>
+        </g>
+      </svg>
+
+</div>
+
+<canvas id="canvas" width="500" height="500"></canvas>
+<div id="png-container"></div>
+
+
+<script>
+var svgString = new XMLSerializer().serializeToString(document.querySelector('svg'));
+
+var canvas = document.getElementById("canvas");
+var ctx = canvas.getContext("2d");
+var DOMURL = self.URL || self.webkitURL || self;
+var img = new Image();
+var svg = new Blob([svgString], {type: "image/svg+xml;charset=utf-8"});
+var url = DOMURL.createObjectURL(svg);
+img.onload = function() {
+    ctx.drawImage(img, 0, 0);
+    //var png = canvas.toDataURL("image/png");
+    //document.querySelector('#png-container').innerHTML = '<img src="'+png+'"/>';
+    //DOMURL.revokeObjectURL(png);
+};
+img.src = url;
+
+</script>
+
+</body>
+</html>

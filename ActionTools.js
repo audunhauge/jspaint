@@ -18,10 +18,11 @@
  * @property {String}  color  - line color
  * @property {String}  fill  - fill color
  * @property {String}  type  - "pointer"|"shape"
- * @property {String}  modify  - "x"|"y"|""
+ * @property {String}  modify  - "x|y|''"
  * @property {Boolean}  abort  - true if Escape pressed
  * @property {Point|null}  mouse  - Set by mousemove on canvas
  * @property {Object|null} revert  - go back to this tool after single action
+ * @property {Shape|null} jarvisHull  - a wrapping around a group of shapes
  */
 class AT {
   static tool = "select";
@@ -35,7 +36,7 @@ class AT {
   static abort = false;
   static mouse = null;
   static revert = null;
-  static showfillAndColor; // see setup()
+  static jarvisHull = null;
 }
 
 /**
@@ -129,20 +130,16 @@ function makeShape(ctx, gtx, start, end) {
  * @param {CanvasRenderingContext2D} gtx
  */
 function shapeAction(diff, action, gtx) {
-  if (SelectedShapes.list.length > 1 && action === "rotate") {
-    const realpoints = SelectedShapes.list.map(e => ({x:e.x,y:e.y}));
-    const { x, y } = findCentroid(realpoints);
-    // points is now delta relative to {x,y}
-    const points = realpoints.map((e) => ({ x: e.x - x, y: e.y - y }));
-    const shape = new Polygon({
-      x,
-      y,
-      points,
-      c: "red",
-      f: "rgba(255,0,0,0.1)",
-    });
+  if (SelectedShapes.list.length > 1 && "rotatescale".includes(action)) {
+    if (!AT.jarvisHull) {
+      AT.jarvisHull = makeJarvisHullShape();
+    }
+    const shape = AT.jarvisHull;
+    const { x, y, c, f, points, r } = shape;
+    shape.points = points.map(({ x, y }) => ({ x, y }));
     shape[action](diff, AT.modify);
     shape.render(gtx);
+    Object.assign(shape, { x, y, c, f, points, r });
   } else {
     for (const s of SelectedShapes.list) {
       const { x, y, c, f, points, r } = s;
@@ -167,6 +164,7 @@ function shapeAction(diff, action, gtx) {
  * @param {HTMLElement} divShapelist
  */
 function activateTool(e, ctx, gtx, divShapelist) {
+  AT.jarvisHull = null;
   const t = /** @type {HTMLElement}*/ (e.target);
   if (t.title) {
     AT.type = "shape"; // assume a shape
@@ -265,56 +263,61 @@ function endAction(e, divShapelist, canCanvas, ctx, gtx) {
       const y = e.clientY - B.y;
       AT.end = { x, y };
     }
-    switch (AT.type) {
-      case "pointer": {
-        if (AT.tool === "select") {
-          // a select tool has drawn a square
-          // find any shape that overlaps
-          // and show them in shapelist
-          const { x, y } = AT.start;
-          const P = new Vector(AT.start);
-          const Q = new Vector(AT.end);
-          const wh = P.sub(Q);
-          const w = Math.abs(wh.x);
-          const h = Math.abs(wh.y);
-          let inside;
-          if (h * w > 9) {
-            const capturePolygon = [x, y, x + w, y, x + w, y + h, x, y + h];
-            inside = drawings.filter((e) =>
-              polygonPolygon(capturePolygon, e.polygon)
-            );
+    // ignore event below canvas
+    if (AT.end.y < B.height) {
+      switch (AT.type) {
+        case "pointer": {
+          if (AT.tool === "select") {
+            // a select tool has drawn a square
+            // find any shape that overlaps
+            // and show them in shapelist
+            const { x, y } = AT.start;
+            const P = new Vector(AT.start);
+            const Q = new Vector(AT.end);
+            const wh = P.sub(Q);
+            const w = Math.abs(wh.x);
+            const h = Math.abs(wh.y);
+            let inside;
+            // only use polygon if area not too small
+            if (h * w > 9) {
+              const capturePolygon = [x, y, x + w, y, x + w, y + h, x, y + h];
+              inside = drawings.filter((e) =>
+                polygonPolygon(capturePolygon, e.polygon)
+              );
+            } else {
+              // pretend it is a point (area is < 10)
+              const p = AT.start;
+              inside = drawings.filter((e) => e.contains(p));
+            }
+            if (Keys.has("Shift")) {
+              // extend selection
+              SelectedShapes.list = SelectedShapes.list.concat(inside);
+            } else if (Keys.has("Control")) {
+              // reduce
+              SelectedShapes.list = SelectedShapes.list.filter(
+                (e) => !inside.includes(e)
+              );
+            } else {
+              // make new
+              SelectedShapes.empty();
+              SelectedShapes.list = inside;
+            }
+            SelectedShapes.show(divShapelist);
           } else {
-            const p = AT.start;
-            inside = drawings.filter((e) => e.contains(p));
+            completeAction(canCanvas, AT.tool);
           }
-          if (Keys.has("Shift")) {
-            // extend selection
-            SelectedShapes.list = SelectedShapes.list.concat(inside);
-          } else if (Keys.has("Control")) {
-            // reduce
-            SelectedShapes.list = SelectedShapes.list.filter(
-              (e) => !inside.includes(e)
-            );
-          } else {
-            // make new
-            SelectedShapes.empty();
-            SelectedShapes.list = inside;
+          break;
+        }
+        case "shape": {
+          const shape = makeShape(ctx, gtx, AT.start, AT.end);
+          if (shape) {
+            drawings.push(shape);
           }
-          SelectedShapes.show(divShapelist);
-        } else {
-          completeAction(canCanvas, AT.tool);
+          break;
         }
-        break;
-      }
-      case "shape": {
-        const shape = makeShape(ctx, gtx, AT.start, AT.end);
-        if (shape) {
-          drawings.push(shape);
+        default: {
+          AT.tool = "select";
         }
-        break;
-      }
-      default: {
-        AT.tool = "select";
       }
     }
   }
@@ -347,6 +350,9 @@ function completeAction(canCanvas, action) {
     if (action === "rotate" && SelectedShapes.list.length > 1) {
       rotateGroup(diff);
     }
+    if (action === "scale" && SelectedShapes.list.length > 1) {
+      scaleGroup(diff);
+    }
     for (const s of SelectedShapes.list) {
       s[action](diff, AT.modify);
     }
@@ -354,6 +360,7 @@ function completeAction(canCanvas, action) {
   renderAll(ctx);
   AT.tool = "select";
   AT.modify = ""; // turn off modify (x|y)
+  AT.jarvisHull = null;
   canCanvas.classList.remove("move");
 }
 
@@ -394,9 +401,8 @@ function chooseColor(e) {
     } else {
       AT.fill = t.title;
       document.documentElement.style.setProperty("--fill", AT.fill);
-      SelectedShapes.update("f", AT.color);
+      SelectedShapes.update("f", AT.fill);
     }
-    AT.showfillAndColor();
     if (SelectedShapes.list.length > 0) {
       renderCanvas();
     }
@@ -415,15 +421,16 @@ function adjustColors(div) {
 
 /**
  * A group of objects are to be rotated
- * Create a polygon from centroids for all shapes
+ * Create a polygon that wraps all these shapes
  * Rotate all shapes around this centroid
  */
 function rotateGroup(diff) {
   const list = SelectedShapes.list;
   const shapeCenters = list.map((s) => ({ x: s.x, y: s.y }));
-  const { x, y } = findCentroid(shapeCenters);
-  // points is now delta relative to {x,y}
+  const { x, y } = AT.jarvisHull;
   const points = shapeCenters.map((e) => ({ x: e.x - x, y: e.y - y }));
+  // a polygon made up of shape centers - rotate this to get
+  // new position for these centers.
   const shape = new Polygon({
     x,
     y,
@@ -437,4 +444,52 @@ function rotateGroup(diff) {
     e.x = x + newpoints[i].x;
     e.y = y + newpoints[i].y;
   });
+}
+
+/**
+ * A group of objects are to be scaled
+ * Create a polygon that wraps all these shapes
+ */
+function scaleGroup(diff) {
+  const list = SelectedShapes.list;
+  const shapeCenters = list.map((s) => ({ x: s.x, y: s.y }));
+  const { x, y } = AT.jarvisHull;
+  const points = shapeCenters.map((e) => ({ x: e.x - x, y: e.y - y }));
+  // a polygon made up of shape centers - scale this to get
+  // new position for these centers.
+  const shape = new Polygon({
+    x,
+    y,
+    points,
+    c: "red",
+    f: "red",
+  });
+  shape.scale(diff, AT.modify);
+  const newpoints = shape.points;
+  list.forEach((e, i) => {
+    e.x = x + newpoints[i].x;
+    e.y = y + newpoints[i].y;
+  });
+}
+
+/**
+ * Returns a shape wrapping the selected shapes
+ * Uses Jarvis gift wrapping
+ */
+function makeJarvisHullShape() {
+  const list = SelectedShapes.list;
+  const allPoints = xyList2Points(
+    list.reduce((s, v) => v.polygon.concat(s), [])
+  );
+  const hull = jarvis(allPoints);
+  const { x, y } = findCentroid(hull);
+  const points = hull.map((e) => ({ x: e.x - x, y: e.y - y }));
+  const shape = new Polygon({
+    x,
+    y,
+    points,
+    c: "red",
+    f: "rgba(255,0,0,0.1)",
+  });
+  return shape;
 }

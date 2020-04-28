@@ -350,3 +350,48 @@ function contrast(rgbHex) {
 // extend 2d context with this function
 // @ts-ignore
 CanvasRenderingContext2D.prototype.roundRect = _roundRect;
+
+
+/**
+ * Given three points returns orientation of turn
+ * from p-q to p-r
+ * @param {Point} p 
+ * @param {Point} q 
+ * @param {Point} r 
+ * @returns{0|1|2} orientation, 1=right 2=left 0=coincident
+ */
+const orient = (p, q, r) => {
+  const val = (q.y - p.y) * (r.x - q.x) - 
+              (q.x - p.x) * (r.y - q.y);
+  return val === 0 ? 0 : ((val > 0) ? 1 : 2);
+};
+
+
+/**
+ * Wraps a set of points in a bounding polygon
+ * @param {Array.<Point>} points to be wrapped
+ */
+const jarvis = points => {
+  const hull = [];
+  let leftMost = points.reduce((a, e, i) => {
+    return points[a].x < points[i].x ? a : i;
+  }, 0);
+  let q = 0;
+  let p = leftMost;
+  
+  do {
+    hull.push(points[p]);
+    q = (p + 1) % points.length;
+    
+    for (let i = 0; i < points.length; i++) {
+       const o = orient(points[p], points[i], points[q]);
+      
+       if (o === 2) {
+         q = i;
+       }
+    }
+    
+    p = q;
+  } while (p !== leftMost);
+  return hull;
+};
