@@ -1,6 +1,9 @@
 :root {
   --line: black;
   --fill: red;
+  --backgrd:lightyellow;
+  --height:800px;
+  --width:1024px;
 }
 
 
@@ -18,7 +21,7 @@
   height: 600px;
   background-color: gainsboro;
   border: solid gray 1px;
-  left: calc(50% - 100px);
+  left: calc(30% - 100px);
   top: 200px;
   z-index: 30;
 }
@@ -34,7 +37,7 @@
 #canvas,
 #colors {
   position: absolute;
-  background-color: whitesmoke;
+  background-color: lightyellow;
 }
 
 
@@ -64,10 +67,11 @@
 }
 
 #canvas, #ghost {
-  width: 1024px;
-  height: 800px;
+  width: var(--width);
+  height: var(--height);
   left: 0px;
   top: 0px;
+  border: solid gray 1px;
 }
 
 /* ghost is used for preview of next draw operation 
@@ -77,6 +81,10 @@
   pointer-events: none;
   position: absolute;
   background-color: transparent;
+}
+
+#canvas {
+  background-color: var(--backgrd);
 }
 
 
@@ -276,4 +284,49 @@ div#mixer input {
 }
 #linesize > div:nth-of-type(6) {
   height: 24px;
+}
+
+#newpage > div {
+  margin:5px;
+}
+#newpage > div > label {
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+}
+#newpage > div  button {
+  margin:2rem;
+  width: 5rem;
+}
+#newpage label > div input {
+  opacity: 0;
+}
+
+/** 
+  Selectors for making buttons for choosing background.
+  I use complex selectors just to illustrate techniques.
+  It's more robust to set id or class - here I'll have to
+  make new rules if I change the html
+  I'd make classes/ids for everything except input:checked ~ span
+*/
+
+#newpage label > div input ~ span {
+    display: inline-block;
+    width: 60px;
+    height: 20px;
+    border: solid gray 1px;
+    box-shadow: 1px 1px 2px black;
+    transform: translate(0, 0);
+    background-color: white;
+}
+#newpage label > div input:checked ~ span {
+  box-shadow: inset 0 0 5px 1px purple;
+  transform: translate(1px, 1px);
+  border: solid green 1px;
+}
+#newpage label > div > label:nth-of-type(1) input ~ span {
+  background-position: 0px 0px, 10px 10px;
+  background-size: 20px 20px;
+  background-image: linear-gradient(45deg, #eee 25%, transparent 25%,
+   transparent 75%, #eee 75%, #eee 100%),
+   linear-gradient(45deg, #eee 25%, white 25%, white 75%, #eee 75%, #eee 100%);
 }

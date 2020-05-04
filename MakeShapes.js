@@ -8,6 +8,39 @@ class MakeShapes {
    * @param {Object} init
    * @param {CanvasRenderingContext2D} init.ctx canvas
    * @param {Object} init.start startpos
+   * @param {Number} init.start.y ypos
+   * @param {Number} init.start.x xpos
+   * @param {Object} init.end end position
+   * @param {Number} init.end.y ypos
+   * @param {Number} init.end.x xpos
+   * @param {boolean} init.closing true if final point
+   * @returns {Shape|undefined}
+   */
+  static polygon({ ctx, start, end, closing = false }) {
+    let shape;
+    const c = AT.color;
+    const f = AT.fill;
+    if (AT.points.length === 0) {
+      AT.points.push(start);
+    }
+    const P = new Vector(start);
+    const Q = new Vector(end);
+    if (P.sub(Q).length > 2 || closing) {
+      const newpoints = AT.points.slice();
+      if (!closing) {
+        newpoints.push(end);
+      }
+      const { x, y } = findCentroid(newpoints);
+      const points = newpoints.map((e) => ({ x: e.x - x, y: e.y - y }));
+      shape = new Polygon({ x, y, points, c, f });
+      shape.render(ctx);
+    }
+    return shape;
+  }
+  /**
+   * @param {Object} init
+   * @param {CanvasRenderingContext2D} init.ctx canvas
+   * @param {Object} init.start startpos
    * @param {Object} init.start.y ypos
    * @param {Object} init.start.x xpos
    * @param {Object} init.end end position
@@ -15,7 +48,7 @@ class MakeShapes {
    * @param {Object} init.end.x xpos
    * @returns {Shape|undefined}
    */
-  static polygon({ ctx, start, end }) {
+  static square({ ctx, start, end }) {
     let shape;
     const c = AT.color;
     const f = AT.fill;
@@ -34,9 +67,6 @@ class MakeShapes {
       shape.render(ctx);
     }
     return shape;
-  }
-  static square({ ctx, start, end }) {
-    return MakeShapes.polygon({ctx,start,end});
   }
   /**
    * @param {Object} init
@@ -85,7 +115,7 @@ class MakeShapes {
       const h = Math.abs(wh.y);
       if (h > 0 && w > 0) {
         // dont need to calculate centroid as we wont rotate this square
-        const points = xyList2Points([0,0,w,0,w,h,0,h]);
+        const points = xyList2Points([0, 0, w, 0, w, h, 0, h]);
         const marker = new Polygon({
           x,
           y,

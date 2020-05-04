@@ -36,6 +36,7 @@ let renderCanvas; // specialized version of renderAll - bound to canvas ctx
 /**
  * Get element from html id
  * @param {string} id html-element id
+ * @returns {HTMLElement|Object}
  */
 const g = (id) => document.getElementById(id);
 
@@ -56,13 +57,17 @@ function setup() {
   const canGhost = /** @type {HTMLCanvasElement} */ (g("ghost"));
   const divColors = g("colors");
   const divShapelist = g("shapelist");
-   ctx = canCanvas.getContext("2d");
+  ctx = canCanvas.getContext("2d");
   const gtx = canGhost.getContext("2d"); // preview next drawing operation
   const inpPointers = g("pointers"); // turned on by keys
   const inpShapes = g("shapes"); // turned on by keys
   B = canCanvas.getBoundingClientRect(); // x,y for top left corner of canvas
 
-  document.addEventListener("menu",e => menuAction(e,ctx,gtx,divShapelist));
+  document.addEventListener("menu", (e) => {
+    const ce = /** @type {CustomEvent} */ (e);
+    menuAction(ce, ctx, gtx, divShapelist)
+    }
+  );
 
   divColors.innerHTML = makeSwatch(baseColor);
   swatchAdjust = () => adjustColors(divColors); // bind to divColors
@@ -83,8 +88,8 @@ function setup() {
   divColors.addEventListener("click", chooseColor);
 
   /* tool-use activated by mouse-down */
-  document.addEventListener("mousedown", startAction);
-  document.addEventListener("mouseup", (e) =>
+  canCanvas.addEventListener("mousedown", startAction);
+  canCanvas.addEventListener("mouseup", (e) =>
     endAction(e, divShapelist, canCanvas, ctx, gtx)
   );
 
@@ -104,8 +109,8 @@ function setup() {
     keyAction(e, canCanvas, ctx, divShapelist)
   );
 
-  /** 
-   * Handle mouse-down on canvas
+  /**
+   * Handle mouse-down on document
    * @instance test
    * @param {MouseEvent} e
    */

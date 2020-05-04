@@ -40,6 +40,35 @@ class AT {
 }
 
 /**
+ * Static class to store current state of active tool
+ * This works much like AT = { tool:"pointer", ...}.
+ * VSCode shows error if you try to get/set properties not defined in class
+ * @namespace ColorSwatch
+ * @property {number}  group  - color swatch group
+ * @property {number}  row
+ * @property {number}  cell
+ * @property {string}  state - keys seen
+ */
+
+class ColorSwatch {
+  static group = 0;
+  static row = 0;
+  static cell = 0;
+  static state = "";
+  static setColor() {
+    const n = ColorSwatch.row * 9 + ColorSwatch.cell + 1;
+    const color = g("colors").querySelector(
+      `div.color-group:nth-of-type(${ColorSwatch.group}) > div:nth-of-type(${n})`
+      // @ts-ignore
+    )?.title;
+    if (color) {
+      AT.fill = color;
+      document.documentElement.style.setProperty("--fill", AT.fill);
+    }
+  }
+}
+
+/**
  * Static class for selecting shapes
  * Longer name as not so frequent use
  * @namespace SelectedShapes
@@ -69,8 +98,12 @@ class SelectedShapes {
    */
   static show(elm) {
     SelectedShapes._clean(); // remove dupes
-    const s = SelectedShapes.list.map((e) => e.info).join("");
-    elm.innerHTML = s;
+    if (SelectedShapes.list.length > 40) {
+      elm.innerHTML = `Selected ${SelectedShapes.list.length} shapes`;
+    } else {
+      const s = SelectedShapes.list.map((e) => e.info).join("");
+      elm.innerHTML = s;
+    }
   }
   /**
    * Hilite selected elements
@@ -113,13 +146,14 @@ class SelectedShapes {
  * @param {Object} end Ending point
  * @param {number} end.x xpos
  * @param {number} end.y ypos
+ * @param {any} optional extra param for some shapes
  * @returns {Shape|undefined}
  */
-function makeShape(ctx, gtx, start, end) {
+function makeShape(ctx, gtx, start, end, optional=undefined) {
   // using the new Optional chaining operator ?.
   // IF makeshapes has this tool THEN run the function
   // ELSE return undefined
-  return MakeShapes[AT.tool]?.({ gtx, ctx, start, end });
+  return MakeShapes[AT.tool]?.({ gtx, ctx, start, end, optional });
 }
 
 /**
@@ -181,12 +215,12 @@ function activateTool(e, ctx, gtx, divShapelist) {
 
 /**
  * Responds to a menu-event from the toolbar
- * @param {CustomEvent} e 
+ * @param {CustomEvent} e
  * @param {CanvasRenderingContext2D} ctx
  * @param {HTMLElement} divShapelist
  */
 function menuAction(e, ctx, gtx, divShapelist) {
-  const {detail} = e;
+  const { detail } = e;
   const text = detail?.text?.toLowerCase();
   Tools[text]?.({ ctx, divShapelist });
 }
@@ -203,13 +237,7 @@ class Tools {
    * @param {HTMLElement} p.divShapelist div to show selected shapes on
    */
   static new({ ctx, divShapelist }) {
-    g("newpage").classList.remove("hidden");
-    cleanGhost();
-    cleanCanvas();
-    AT.color = "blue";
-    AT.fill = "transparent";
-    drawings = [];
-    SelectedShapes.list = []; // no selected shapes
+    startNewPage();
   }
 
   static erase({ ctx, divShapelist }) {
@@ -322,9 +350,27 @@ function endAction(e, divShapelist, canCanvas, ctx, gtx) {
           break;
         }
         case "shape": {
-          const shape = makeShape(ctx, gtx, AT.start, AT.end);
-          if (shape) {
-            drawings.push(shape);
+          if (AT.tool === "polygon" && AT.points.length > 0) {
+            const P = new Vector(AT.points[0]);
+            const Q = new Vector(AT.end);
+            if (Keys.has("Shift") && AT.points.length > 1) {
+              const shape = makeShape(ctx, gtx, P, Q,true);
+              if (shape) {
+                drawings.push(shape);
+                AT.points = [];
+                cleanGhost();
+                AT.start = null;
+                AT.abort = false;
+              }
+            } else {
+              // add endpoint to AT.points
+              AT.points.push(AT.end);
+            }
+          } else {
+            const shape = makeShape(ctx, gtx, AT.start, AT.end,null);
+            if (shape) {
+              drawings.push(shape);
+            }
           }
           break;
         }
@@ -335,7 +381,7 @@ function endAction(e, divShapelist, canCanvas, ctx, gtx) {
     }
   }
   canCanvas.removeEventListener("mousemove", (e) => showGhost(e, gtx));
-  if (AT.tool !== "pgon") {
+  if (AT.tool !== "polygon") {
     cleanGhost();
     AT.start = null;
     AT.abort = false;
@@ -395,7 +441,7 @@ function showGhost(e, gtx) {
     const delta = P.sub(Q).length;
     if (delta > 2) {
       cleanGhost();
-      makeShape(gtx, gtx, AT.start, AT.end);
+      makeShape(gtx, gtx, AT.start, AT.end,null);
     }
   }
 }
@@ -491,10 +537,24 @@ function scaleGroup(diff) {
  */
 function makeJarvisHullShape() {
   const list = SelectedShapes.list;
-  const allPoints = xyList2Points(
-    list.reduce((s, v) => v.polygon.concat(s), [])
-  );
-  const hull = jarvis(allPoints);
+  const N = list.length;
+  let somePoints;
+  // use a sample if N > 1000
+  // finding jarvis hull for 10000 shapes takes noticable time
+  if (N > 1000) {
+    const samples = Math.trunc(Math.log2(N) * 50);
+    const step = Math.trunc(N / samples);
+    const randomSample = [];
+    for (let i = 0; i < N; i += step + Math.trunc((Math.random() * step) / 2)) {
+      randomSample.push(list[i]);
+    }
+    somePoints = xyList2Points(
+      randomSample.reduce((s, v) => v.polygon.concat(s), [])
+    );
+  } else {
+    somePoints = xyList2Points(list.reduce((s, v) => v.polygon.concat(s), []));
+  }
+  const hull = jarvis(somePoints);
   const { x, y } = findCentroid(hull);
   const points = hull.map((e) => ({ x: e.x - x, y: e.y - y }));
   const shape = new Polygon({

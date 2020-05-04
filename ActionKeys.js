@@ -23,10 +23,11 @@ function keyAction(e, canCanvas, ctx, divShapelist) {
   if (AT.type === "pointer" && SelectedShapes.list.length > 0) {
     ExtendedKeyAction[key]?.({ canCanvas, ctx, divShapelist });
   }
+  ColorSwatch.state = key;  // so c can see
 }
 
 /**
- * Static class to store current state of active tool
+ * Static class for keyborad actions - simple means SelectedShapes.list can be empty
  * This works much like AT = { tool:"pointer", ...}.
  * VSCode shows error if you try to get/set properties not defined in class
  * @namespace SimpleKeyAction
@@ -41,6 +42,31 @@ class SimpleKeyAction {
     AT.type = "pointer";
     pointerActive();
   }
+  /**
+   * Select color swatch
+   * @param {Object} obj not used
+   */
+  static c(obj) {
+    if ("12345678".includes(ColorSwatch.state) ) {
+      // prev key was one of 1..8 - so activate this swatch
+      ColorSwatch.group = Number(ColorSwatch.state);
+      ColorSwatch.row = 0;
+      ColorSwatch.cell = 0;
+    }
+    // cc means get next color cell
+    if (ColorSwatch.state === "c") {
+      ColorSwatch.cell = (ColorSwatch.cell + 1) % 9;
+    }
+    // vc means next row
+    if (ColorSwatch.state === "v") {
+      ColorSwatch.cell = 0;
+      ColorSwatch.row = (ColorSwatch.row + 1) % 3;
+    }
+    ColorSwatch.setColor();
+  }
+ 
+
+
   /**
    * Cancels current action
    * @param {Object} init
@@ -68,8 +94,9 @@ class SimpleKeyAction {
   static x({ ctx, divShapelist }) {
     if (AT.tool === "scale") {
       AT.modify = "x";
-      return;
     }
+  }
+  static Delete({ ctx, divShapelist }) {
     drawings = drawings.filter((e) => !SelectedShapes.list.includes(e));
     renderAll(ctx);
     SelectedShapes.list = [];

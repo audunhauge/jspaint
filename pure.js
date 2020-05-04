@@ -110,7 +110,7 @@ const rgb2div = (rgb) => `<div title="#${rgb2hex(rgb)}"
 const makeSwatch = (start) => {
   let s = "";
   [0, 20, 40, 60, 80, 180, 200].forEach((h) => {
-    s += "<div>";
+    s += '<div class="color-group">';
     h = (start + h) % 360;
     const pq = {
       0: (x) => ({ h, s: 1, v: x / 100 }),
@@ -128,15 +128,19 @@ const makeSwatch = (start) => {
     }
     s += "</div>";
   });
-  // create a grayscale, a gray color scale and a neighbour scale
+  // create a grayscale, whitescale, a gray color scale and a neighbour scale
   // grayscale is independent of base color
   // gray color scale takes base color and goes grayish
   // neighbour scale finds four neighbours to left and right around base
   //   the base color will be in the middle
   //   can thus move left/right round the color-ring by
   //   placing pointer on a neighbour and pressing Home-key
-  s += "<div>";
+  s += '<div class="color-group">';
   s += scale({ h: 0, s: 0, v: 0 }, 9, "v", 9)
+    .map(hsv2rgb)
+    .map(rgb2div)
+    .join("");
+  s += scale({ h: start, s: 1, v: 1 }, 9, "s", 9)
     .map(hsv2rgb)
     .map(rgb2div)
     .join("");
@@ -144,6 +148,7 @@ const makeSwatch = (start) => {
     .map(hsv2rgb)
     .map(rgb2div)
     .join("");
+  s += '</div><div class="color-group">';
   s += scale({ h: (start + 200) % 360, s: 1, v: 1 }, 9, "h", 9)
     .map(hsv2rgb)
     .map(rgb2div)
@@ -220,6 +225,9 @@ function findCentroid(pts) {
     y += (p1.y + p2.y - 2 * off.y) * f;
   }
   f = twicearea * 3;
+  if (f === 0) {  // no area so just return first point
+    return pts[0];
+  }
   return {
     x: x / f + off.x,
     y: y / f + off.y,

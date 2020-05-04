@@ -13,6 +13,7 @@
     <script src="MakeShapes.js"></script>
     <script src="ActionTools.js"></script>
     <script src="ActionKeys.js"></script>
+    <script src="NewPage.js"></script>
     <script src="paint.js"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 </head>
@@ -24,22 +25,9 @@
         <li>a</li>
     </home-bar>
     <div id="newpage" class="hidden">
-        hidden
     </div>
     <div id="main">
         <div id="tools">
-            <div>
-                <label>
-                    <div><span>File</span></div>
-                    <div>
-                        <div>
-                            <label>
-                                <div title="new"><span title="new">New</span></div>
-                            </label>
-                        </div>
-                    </div>
-                </label>
-            </div>
             <div>
                 <label>
                     <input id="pointers" name="main" type="radio" checked>
@@ -48,25 +36,25 @@
                         <div>
                             <label>
                                 <input name="point" type="radio" checked>
-                                <div  class="icon" data-parent="pointers" title="select">↖</div>
+                                <div class="icon" data-parent="pointers" title="select">↖</div>
                             </label>
                         </div>
                         <div>
                             <label>
                                 <input name="point" type="radio">
-                                <div  class="icon" data-parent="pointers" title="move">↻</div>
+                                <div class="icon" data-parent="pointers" title="move">↻</div>
                             </label>
                         </div>
                         <div>
                             <label>
                                 <input name="point" type="radio">
-                                <div  class="icon" data-parent="pointers" title="size">⇔</div>
+                                <div class="icon" data-parent="pointers" title="size">⇔</div>
                             </label>
                         </div>
                         <div>
                             <label>
                                 <input name="point" type="radio">
-                                <div  class="icon" data-parent="pointers" title="grab">⇰</div>
+                                <div class="icon" data-parent="pointers" title="grab">⇰</div>
                             </label>
                         </div>
                     </div>
@@ -80,19 +68,19 @@
                         <div>
                             <label>
                                 <input name="square" type="radio" checked>
-                                <div  class="shape icon" data-parent="shapes" title="square">⬜</div>
+                                <div class="shape icon" data-parent="shapes" title="square">⬜</div>
                             </label>
                         </div>
                         <div>
                             <label>
                                 <input name="square" type="radio">
-                                <div  class="shape icon" data-parent="shapes" title="circle">⭕</div>
+                                <div class="shape icon" data-parent="shapes" title="circle">⭕</div>
                             </label>
                         </div>
                         <div>
                             <label>
                                 <input name="square" type="radio">
-                                <div  class="shape icon" data-parent="shapes" title="polygon">▢</div>
+                                <div class="shape icon" data-parent="shapes" title="polygon">▢</div>
                             </label>
                         </div>
                     </div>
@@ -112,7 +100,7 @@
             </div>
             <div>
                 <label>
-                    <div  class="icon" title="erase">◍</div>
+                    <div class="icon" title="erase">◍</div>
                 </label>
             </div>
             <div id="linesize">
@@ -127,12 +115,12 @@
                 <input type="color">
             </div>
         </div>
-        
+
         <div id="draw">
             <canvas id="canvas" width="1024" height="800"></canvas>
             <canvas id="ghost" width="1024" height="800"></canvas>
         </div>
-       
+
         <div id="colors">
         </div>
         <div id="shapelist">
@@ -144,6 +132,32 @@
     <script>
         setup();
     </script>
+    <template id="form">
+        <div><label>Page size<select name="pagesize" id="pagesize">
+                    <option value="A4">A4</option>
+                    <option value="A5">A5</option>
+                    <option value="A3">A3</option>
+                    <option value="letter">letter</option>
+                </select></label></div>
+        <div>Orientation<label> <input value="portrait" name="orientation" type="radio"> Portrait
+                <input value="landscape" checked name="orientation" type="radio"> Landscape</label></div>
+        <div><label>Width <input type="number" id="width" value="500"></label></div>
+        <div><label>Height <input type="number" id="height" value="500"></label></div>
+        <div><label>Background
+                <div>
+                    <label><input value="rgba(0,0,0,0)"
+                        checked name="bg" type="radio"> <span></span></label>
+                    <label><input value = "#ffffff"
+                        name="bg" type="radio"> <span></span></label>
+                </div>
+            </label></div>
+        <div><label>Fill <input type="color" id="color"></label></div>
+        <div>
+            <label><button id="ok">OK</button>
+                <button id="cancel">Cancel</button>
+            </label>
+        </div>
+    </template>
 </body>
 
 </html>
