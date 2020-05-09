@@ -117,8 +117,8 @@
         </div>
 
         <div id="draw">
-            <canvas id="canvas" width="1024" height="800"></canvas>
-            <canvas id="ghost" width="1024" height="800"></canvas>
+            <canvas id="canvas" width="1122" height="794"></canvas>
+            <canvas id="ghost" width="1122" height="794"></canvas>
         </div>
 
         <div id="colors">
@@ -134,15 +134,15 @@
     </script>
     <template id="form">
         <div><label>Page size<select name="pagesize" id="pagesize">
-                    <option value="A4">A4</option>
-                    <option value="A5">A5</option>
-                    <option value="A3">A3</option>
-                    <option value="letter">letter</option>
+                    <option value="1122:794">A4</option>
+                    <option value="561:397">A5</option>
+                    <option value="2244:1592">A3</option>
+                    <option value="300:400">letter</option>
                 </select></label></div>
-        <div>Orientation<label> <input value="portrait" name="orientation" type="radio"> Portrait
+        <div id="orientation">Orientation<label> <input value="portrait" name="orientation" type="radio"> Portrait
                 <input value="landscape" checked name="orientation" type="radio"> Landscape</label></div>
-        <div><label>Width <input type="number" id="width" value="500"></label></div>
-        <div><label>Height <input type="number" id="height" value="500"></label></div>
+        <div><label>Width <input type="number" id="width" value="1122"></label></div>
+        <div><label>Height <input type="number" id="height" value="794"></label></div>
         <div><label>Background
                 <div>
                     <label><input value="rgba(0,0,0,0)"

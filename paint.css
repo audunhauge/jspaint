@@ -1,23 +1,22 @@
 :root {
   --line: black;
   --fill: red;
-  --backgrd:lightyellow;
-  --height:800px;
-  --width:1024px;
+  --backgrd: lightyellow;
+  --height: 794px;
+  --width: 1122px;
 }
-
 
 #main {
   position: absolute;
-  left:0;
-  top:100px;
+  left: 0;
+  top: 100px;
   width: 100vw;
   height: calc(100vh - 100px);
 }
 
 #newpage {
   position: absolute;
-  width:400px;
+  width: 400px;
   height: 600px;
   background-color: gainsboro;
   border: solid gray 1px;
@@ -27,7 +26,7 @@
 }
 
 #newpage.hidden {
-  display:none;
+  display: none;
 }
 
 #mixer,
@@ -39,7 +38,6 @@
   position: absolute;
   background-color: lightyellow;
 }
-
 
 #shapelist {
   right: 20px;
@@ -66,7 +64,8 @@
   user-select: none;
 }
 
-#canvas, #ghost {
+#canvas,
+#ghost {
   width: var(--width);
   height: var(--height);
   left: 0px;
@@ -87,7 +86,6 @@
   background-color: var(--backgrd);
 }
 
-
 /*****************************/
 /*     cursors               */
 /*****************************/
@@ -98,8 +96,6 @@ canvas.move {
 canvas.rotate {
   cursor: pointer;
 }
-
-
 
 /* ******************************************** 
   This section is a bit involved - allows choosing a subtool by input:radio
@@ -125,8 +121,8 @@ div.icon {
 }
 
 #tools label > div:nth-of-type(1) span {
-  display:inline-block;
-  padding-top:16px;
+  display: inline-block;
+  padding-top: 16px;
 }
 
 /* this may be the only div if no subtools */
@@ -136,7 +132,7 @@ div.icon {
   height: 64px;
 }
 #tools > div > label:hover > div:nth-of-type(1) {
-  color:rgba(128, 128, 128, 0.2);
+  color: rgba(128, 128, 128, 0.2);
 }
 
 /* the inputs are used to trigger :checked rules 
@@ -161,19 +157,19 @@ div.icon {
 /* a checked subtool - place over main tool */
 #tools label label input:checked ~ div {
   left: 0px;
-  top:0;
+  top: 0;
   opacity: 1;
 }
 
 /* show subtools when main tool is hovered */
 #tools label:hover > div:nth-of-type(2) div {
-  position: relative;  /* so that flex can lay them out */
+  position: relative; /* so that flex can lay them out */
   opacity: 1;
 }
 
 /* hilight choosen subtool */
 #tools label:hover label input:checked ~ div {
-  color:blue;
+  color: blue;
   box-shadow: 1px 1px 2px blue;
 }
 
@@ -181,9 +177,9 @@ div.icon {
 #tools label > div:nth-of-type(2) {
   display: block;
   position: absolute;
-  z-index:2;
-  top:-3px;
-  left:-3px;
+  z-index: 2;
+  top: -3px;
+  left: -3px;
   height: 64px;
 }
 
@@ -192,7 +188,7 @@ div.icon {
   display: flex;
   width: calc(70px * 5);
   flex-direction: row;
-  left:64px;
+  left: 64px;
   padding-left: 12px;
   justify-content: flex-start;
 }
@@ -202,9 +198,7 @@ div.icon {
   box-shadow: 3px 3px 2px blue;
 }
 
-
 /*          colors      */
-
 
 #fill,
 #colors {
@@ -217,7 +211,7 @@ div.icon {
 }
 
 #fill {
-    bottom: 10px;
+  bottom: 10px;
 }
 
 #colors > div,
@@ -236,25 +230,24 @@ div.icon {
 }
 
 #current {
-  width:36px;
+  width: 36px;
   height: 36px;
   text-align: center;
   font-size: 2rem;
   position: absolute;
-  top:20px;
-  left:120px;
+  top: 20px;
+  left: 120px;
   background-color: var(--fill);
   color: var(--line);
   border-radius: 50%;
 }
 
-
-div#mixer ,
+div#mixer,
 div#linesize {
   width: 100px;
   user-select: none;
   background-color: transparent;
-  border:none;
+  border: none;
   height: 100px;
 }
 
@@ -265,8 +258,8 @@ div#mixer input {
 #linesize > div {
   width: 60px;
   height: 1px;
-  margin:8px;
-  background-color:var(--line);
+  margin: 8px;
+  background-color: var(--line);
 }
 
 #linesize > div:nth-of-type(2) {
@@ -286,15 +279,19 @@ div#mixer input {
   height: 24px;
 }
 
+#newpage {
+  box-shadow: 2px 2px 15px 2px gray;
+}
+
 #newpage > div {
-  margin:5px;
+  margin: 1rem;
 }
 #newpage > div > label {
-  display:grid;
+  display: grid;
   grid-template-columns: 1fr 1fr;
 }
-#newpage > div  button {
-  margin:2rem;
+#newpage > div button {
+  margin: 2rem;
   width: 5rem;
 }
 #newpage label > div input {
@@ -310,13 +307,13 @@ div#mixer input {
 */
 
 #newpage label > div input ~ span {
-    display: inline-block;
-    width: 60px;
-    height: 20px;
-    border: solid gray 1px;
-    box-shadow: 1px 1px 2px black;
-    transform: translate(0, 0);
-    background-color: white;
+  display: inline-block;
+  width: 60px;
+  height: 20px;
+  border: solid gray 1px;
+  box-shadow: 1px 1px 2px black;
+  transform: translate(0, 0);
+  background-color: white;
 }
 #newpage label > div input:checked ~ span {
   box-shadow: inset 0 0 5px 1px purple;
@@ -326,7 +323,13 @@ div#mixer input {
 #newpage label > div > label:nth-of-type(1) input ~ span {
   background-position: 0px 0px, 10px 10px;
   background-size: 20px 20px;
-  background-image: linear-gradient(45deg, #eee 25%, transparent 25%,
-   transparent 75%, #eee 75%, #eee 100%),
-   linear-gradient(45deg, #eee 25%, white 25%, white 75%, #eee 75%, #eee 100%);
+  background-image: linear-gradient(
+      45deg,
+      #eee 25%,
+      transparent 25%,
+      transparent 75%,
+      #eee 75%,
+      #eee 100%
+    ),
+    linear-gradient(45deg, #eee 25%, white 25%, white 75%, #eee 75%, #eee 100%);
 }

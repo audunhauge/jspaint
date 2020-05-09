@@ -25,6 +25,9 @@ let swatchAdjust;
 
 let ctx;
 
+let canWidth = 1122;
+let canHeight = 794;
+
 const mouse = {}; // stores mouse pos for document
 
 /**
@@ -48,8 +51,8 @@ let baseColor = 0; // starting color for swatches
  * Connects some utility functions to DOM elements
  */
 function setup() {
-  cleanGhost = () => gtx.clearRect(0, 0, 1024, 800);
-  cleanCanvas = () => ctx.clearRect(0, 0, 1024, 800);
+  cleanGhost = () => gtx.clearRect(0, 0, canWidth, canHeight);
+  cleanCanvas = () => ctx.clearRect(0, 0, canWidth, canHeight);
 
   const divTools = g("tools");
   // cast from html-element to canvas

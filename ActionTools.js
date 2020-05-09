@@ -222,7 +222,7 @@ function activateTool(e, ctx, gtx, divShapelist) {
 function menuAction(e, ctx, gtx, divShapelist) {
   const { detail } = e;
   const text = detail?.text?.toLowerCase();
-  Tools[text]?.({ ctx, divShapelist });
+  Tools[text]?.({ ctx, gtx, divShapelist });
 }
 
 /**

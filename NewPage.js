@@ -7,6 +7,28 @@ function startNewPage() {
   const clone = template.content.cloneNode(true);
   np.innerHTML = "";
   np.append(clone);
+  const selPageSize = g("pagesize");
+  const divOrientation = np.querySelector('#orientation');
+  const inpWidth = np.querySelector("#width");
+  const inpHeight = np.querySelector("#height");
+
+  selPageSize.addEventListener("change", e => {
+    const [w,h] = selPageSize.value.split(":");
+    inpWidth.value = w;
+    inpHeight.value = h;
+  });
+
+  divOrientation.addEventListener("click", e => {
+    const orientation = np.querySelector("input[name=orientation]:checked").value;
+    const [large,small] = [inpWidth.value,inpHeight.value].sort((x,y) => y-x);
+    if (orientation === "portrait") {
+        inpWidth.value = small;
+        inpHeight.value = large;
+    } else {
+        inpWidth.value = large;
+        inpHeight.value = small;
+    }
+  });
 
   const btnCancel = g("cancel");
   btnCancel.addEventListener("click", (e) => {
@@ -23,10 +45,10 @@ function startNewPage() {
     drawings = [];
     SelectedShapes.list = []; // no selected shapes
     // code to read values form form
-    const pageSize = np.querySelector("#pagesize").value ?? "A4";
+    const pageSize = selPageSize.value ?? "A4";
     const orientation = np.querySelector("input[name=orientation]:checked").value ?? "landscape";
-    const width = +np.querySelector("#width").value || 1024;
-    const height = +np.querySelector("#height").value || 800;
+    const width = inpWidth.value || 1122;
+    const height = inpHeight.value || 794;    
     const background = np.querySelector("input[name=bg]:checked").value ?? "#ffffff";
     document.documentElement.style.setProperty("--backgrd", background);
     document.documentElement.style.setProperty("--width", String(width) + "px");
@@ -38,5 +60,8 @@ function startNewPage() {
     canvas.height = height;
     ghost.width = width;
     ghost.height = height;
+    canWidth = width;
+    canHeight = height;
+    B = g("canvas").getBoundingClientRect(); // x,y for top left corner of canvas
   });
 }
