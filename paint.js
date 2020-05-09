@@ -7,7 +7,7 @@
  * <b>drawings</b> is a global array of shapes to draw. This is the
  * main structure that stores all info about the canvas drawing.
  * Picture is repainted by iterating thru this array.
- * </p>
+ * </p> 
  */
 
 // can only push Shape (or subclasses) into drawings

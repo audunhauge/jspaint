@@ -4,7 +4,7 @@
  * Also show outline on ghost while selectiong/moving
  */
 class MakeShapes {
-  /**
+  /** 
    * @param {Object} init
    * @param {CanvasRenderingContext2D} init.ctx canvas
    * @param {Object} init.start startpos

@@ -22,7 +22,6 @@
     <home-bar heading="ShapePainter">
         <li>New</li>
         <li>Save</li>
-        <li>a</li>
     </home-bar>
     <div id="newpage" class="hidden">
     </div>
@@ -152,6 +151,15 @@
                 </div>
             </label></div>
         <div><label>Fill <input type="color" id="color"></label></div>
+        <div>
+            <label><button id="ok">OK</button>
+                <button id="cancel">Cancel</button>
+            </label>
+        </div>
+    </template>
+    <template id="save-file">
+       <div><label>File name to save 
+           <input type="text" id="file-name" placeholder="mypicture.png"></label></div>
         <div>
             <label><button id="ok">OK</button>
                 <button id="cancel">Cancel</button>

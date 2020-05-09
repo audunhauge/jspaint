@@ -1,9 +1,9 @@
 // @ts-check
 
-function startNewPage() {
+function makeForm(id, actions) {
   const np = g("newpage");
   np.classList.remove("hidden");
-  const template = /** @type {HTMLTemplateElement} */ (g("form"));
+  const template = /** @type {HTMLTemplateElement} */ (g(id));
   const clone = template.content.cloneNode(true);
   np.innerHTML = "";
   np.append(clone);
@@ -30,14 +30,20 @@ function startNewPage() {
     }
   });
 
+  const btnOK = g("ok");
+  btnOK.addEventListener("click", (e) => {
+    np.classList.add("hidden");
+    actions(np);
+  });
+
   const btnCancel = g("cancel");
   btnCancel.addEventListener("click", (e) => {
     np.classList.add("hidden");
   });
+}
 
-  const btnOK = g("ok");
-  btnOK.addEventListener("click", (e) => {
-    np.classList.add("hidden");
+function startNewPage() { 
+  makeForm("form", (np) => {
     cleanGhost();
     cleanCanvas();
     AT.color = "blue";
@@ -64,4 +70,11 @@ function startNewPage() {
     canHeight = height;
     B = g("canvas").getBoundingClientRect(); // x,y for top left corner of canvas
   });
+}
+
+function saveToFile() { 
+  makeForm("save-file", np => {
+    console.log("file saved");
+  })
+  
 }
