@@ -240,6 +240,10 @@ class Tools {
     startNewPage();
   }
 
+  static save({ ctx, divShapelist }) {
+    saveToFile();
+  }
+
   static erase({ ctx, divShapelist }) {
     cleanGhost();
     cleanCanvas();

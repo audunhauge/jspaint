@@ -5,7 +5,7 @@
  * @typedef {Object} hsv
  * @property {number} hsv.h
  * @property {number} hsv.s
- * @property {number} hsv.v
+ * @property {number} hsv.v 
  *
  * @typedef {Object} rgb
  * @property {number} rgb.r

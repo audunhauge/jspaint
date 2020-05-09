@@ -5,7 +5,7 @@
  */
 
 /**
- * Handles keypress - can check if(Keys.has("ArrowDown")) 
+ * Handles keypress - can check if(Keys.has("ArrowDown"))  
  */
 class Keys {
   static _keys = new Set();
