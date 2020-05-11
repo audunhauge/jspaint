@@ -22,6 +22,7 @@
     <home-bar heading="ShapePainter">
         <li>New</li>
         <li>Save</li>
+        <li>Load</li>
     </home-bar>
     <div id="newpage" class="hidden">
     </div>
@@ -88,7 +89,7 @@
             <div>
                 <label>
                     <input name="main" type="radio">
-                    <div class="icon">◿</div>
+                    <div class="icon" title="picture">◿</div>
                 </label>
             </div>
             <div>
@@ -144,10 +145,8 @@
         <div><label>Height <input type="number" id="height" value="794"></label></div>
         <div><label>Background
                 <div>
-                    <label><input value="rgba(0,0,0,0)"
-                        checked name="bg" type="radio"> <span></span></label>
-                    <label><input value = "#ffffff"
-                        name="bg" type="radio"> <span></span></label>
+                    <label><input value="rgba(0,0,0,0)" checked name="bg" type="radio"> <span></span></label>
+                    <label><input value="#ffffff" name="bg" type="radio"> <span></span></label>
                 </div>
             </label></div>
         <div><label>Fill <input type="color" id="color"></label></div>
@@ -158,13 +157,46 @@
         </div>
     </template>
     <template id="save-file">
-       <div><label>File name to save 
-           <input type="text" id="file-name" placeholder="mypicture.png"></label></div>
+        <div><label>File name to save
+                <input type="text" id="file-name" placeholder="mypicture.png"></label></div>
         <div>
             <label><button id="ok">OK</button>
                 <button id="cancel">Cancel</button>
             </label>
         </div>
+    </template>
+    <template id="load-file">
+        <label id="loadfile" for="imgloader">Dropzone
+          <input id="imgloader" type="file" accept="image/*" onchange="loadFile(event)">
+        </label>       
+        <script>
+            var loadFile = function (event) {
+                var output = document.createElement('img');
+                output.src = URL.createObjectURL(event.target.files[0]);
+                output.onload = function () {
+                    URL.revokeObjectURL(output.src) // free memory
+                    const canvas = document.getElementById("canvas");
+                    const ctx = canvas.getContext("2d");
+                    ctx.drawImage(output, 0, 0);
+
+                }
+            };
+        </script>
+        <div>
+            <label><button id="ok">OK</button>
+                <button id="cancel">Cancel</button>
+            </label>
+        </div>
+    </template>
+    <template id="loadpic">
+        <label id="loadfile" for="imgloader">Dropzone
+          <input id="imgloader" type="file" accept="image/*">
+        </label>  
+        <div>
+            <label><button id="ok">OK</button>
+                <button id="cancel">Cancel</button>
+            </label>
+        </div>     
     </template>
 </body>
 

@@ -1,11 +1,11 @@
 // @ts-check
 
-/** 
+/**
  * @file Shapes - class definitions for drawing shapes on a canvas. Shape is base class for Square and Circle.
  */
 
 /**
- * Handles keypress - can check if(Keys.has("ArrowDown"))  
+ * Handles keypress - can check if(Keys.has("ArrowDown"))
  */
 class Keys {
   static _keys = new Set();
@@ -256,16 +256,20 @@ class Polygon extends Shape {
     const angle = (d.x / 100) % (2 * Math.PI);
     const sin = Math.sin(angle);
     const cos = Math.cos(angle);
-    this.points = this.points.map(p => rotate(p, sin, cos))
+    this.points = this.points.map((p) => rotate(p, sin, cos));
   }
 
   scale(d, modify) {
     const { points } = this;
-    const largest = points.reduce((s,p) => Math.max(s,Math.abs(p.x),Math.max(p.y)),0);
+    const largest = points.reduce(
+      (s, p) => Math.max(s, Math.abs(p.x), Math.max(p.y)),
+      0
+    );
     const s = Math.max(1 + d.x / 100, 1 / largest);
     const sx = modify === "y" ? 1 : s;
     const sy = modify === "x" ? 1 : s;
-    this.points = points.map(e => ({x:e.x*sx,y:e.y*sy}));
+    this.points = points.map((e) => ({ x: e.x * sx, y: e.y * sy }));
+    return {sx,sy};
   }
 
   move(d) {
@@ -314,10 +318,10 @@ class Circle extends Shape {
     this.bb.y = this.y - this.r;
   }
   get polygon() {
-    const {x,y,r} = this;
-    return [x-r,y-r,x+r,y-r,x+r,y+r,x-r,y+r];
+    const { x, y, r } = this;
+    return [x - r, y - r, x + r, y - r, x + r, y + r, x - r, y + r];
   }
-  
+
   contains(p) {
     return polygonPoint(this.polygon, p);
   }
@@ -329,7 +333,71 @@ class Circle extends Shape {
     return "Circle";
   }
 
-  rotate(d,modify) {
+  rotate(d, modify) {}
+}
 
+/*
+ * @param {string} init.id id of picture element
+ * @param {number} init.sw source width
+ * @param {number} init.sh source height
+ * @param {number} init.dx
+ * @param {number} init.dy
+ */
+
+class Picture extends Polygon {
+  /**
+   * A container for a picture
+   * @param {Object} init parameters for the container
+   * @param {number} init.x xpos
+   * @param {number} init.y ypos
+   * @param {number} init.y ypos
+   * @param {Array.<Point>} init.points
+   * @param {number} init.dw target width
+   * @param {number} init.dh target height
+   
+   */
+  constructor({ x, y, dw, dh, points }) {
+    // images don't c:color-stroke and f:fill
+    super({ x, y, points,c: "lightblue", f: "transparent" });
+    this.offscreenCanvas = document.createElement("canvas");
+    this.offscreenCanvas.width = dw;
+    this.offscreenCanvas.height = dh;
+    this.width = dw;
+    this.height = dh;
+    this.sx = 1;
+    this.sy = 1;
   }
+
+  scale(d, modify) {
+    const {sx,sy} = super.scale(d,modify);
+    this.width *= sx;
+    this.height *= sy;
+    this.sx = sx;
+    this.sy = sy;
+    return {sx,sy};
+  }
+
+  get type() {
+    return "Picture";
+  }
+
+  get angle() {
+    const [p1,p2] = this.points;
+    const dy = p2.y - p1.y;
+    const dx = p2.x - p1.x;
+    return Math.atan2(dy,dx);
+  }
+
+  
+  drawme(ctx) {
+    super.drawme(ctx);
+    const {x,y,sx,sy,points} = this;
+    const p = points[0];
+    const angle = this.angle;
+    ctx.setTransform(sx, 0, 0, sy, x+p.x,y+p.y);
+    ctx.rotate(angle);
+    ctx.drawImage(this.offscreenCanvas,0,0);
+    ctx.setTransform(1,0,0,1,0,0);
+  }
+  
 }

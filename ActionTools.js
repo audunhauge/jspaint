@@ -51,9 +51,9 @@ class AT {
  */
 
 class ColorSwatch {
-  static group = 0;
-  static row = 0;
-  static cell = 0;
+  static group = 1;
+  static row = 1;
+  static cell = 1;
   static state = "";
   static setColor() {
     const n = ColorSwatch.row * 9 + ColorSwatch.cell + 1;
@@ -242,6 +242,10 @@ class Tools {
 
   static save({ ctx, divShapelist }) {
     saveToFile();
+  }
+
+  static load({ ctx, divShapelist }) {
+    loadImage();
   }
 
   static erase({ ctx, divShapelist }) {
@@ -548,9 +552,13 @@ function makeJarvisHullShape() {
   if (N > 1000) {
     const samples = Math.trunc(Math.log2(N) * 50);
     const step = Math.trunc(N / samples);
+    const halfstep = Math.trunc(step / 2);
     const randomSample = [];
-    for (let i = 0; i < N; i += step + Math.trunc((Math.random() * step) / 2)) {
+    let i = 0;
+    while (i<N) {
       randomSample.push(list[i]);
+      const delta = Math.max(1,step + Math.round(Math.random()*step - halfstep));
+      i += delta;
     }
     somePoints = xyList2Points(
       randomSample.reduce((s, v) => v.polygon.concat(s), [])

@@ -1,13 +1,13 @@
 // @ts-check
 
 /**
- * @file ActionKeys 
+ * @file ActionKeys
  * Static classes for handling key-actions
  * Key-activated tools like g(grab) s(scale) r(rotate)
  */
 
 /**
- * @param {KeyboardEvent} e 
+ * @param {KeyboardEvent} e
  * @param {HTMLElement} canCanvas
  * @param {CanvasRenderingContext2D} ctx
  * @param {HTMLElement} divShapelist
@@ -23,7 +23,7 @@ function keyAction(e, canCanvas, ctx, divShapelist) {
   if (AT.type === "pointer" && SelectedShapes.list.length > 0) {
     ExtendedKeyAction[key]?.({ canCanvas, ctx, divShapelist });
   }
-  ColorSwatch.state = key;  // so c can see
+  ColorSwatch.state = key; // so c can see
 }
 
 /**
@@ -47,7 +47,7 @@ class SimpleKeyAction {
    * @param {Object} obj not used
    */
   static c(obj) {
-    if ("12345678".includes(ColorSwatch.state) ) {
+    if (ColorSwatch.state && "12345678".includes(ColorSwatch.state)) {
       // prev key was one of 1..8 - so activate this swatch
       ColorSwatch.group = Number(ColorSwatch.state);
       ColorSwatch.row = 0;
@@ -64,8 +64,45 @@ class SimpleKeyAction {
     }
     ColorSwatch.setColor();
   }
- 
 
+  /**
+   * Load image into Picture
+   * @param {Object} obj not used
+   */
+  static l(obj) {
+    if (SelectedShapes.list.length === 0) {
+      // select shape under pointer
+      const p = AT.mouse;
+      const inside = drawings.filter((e) => e.contains(p));
+      if (inside.length > 0) {
+        const target = inside[inside.length - 1];
+        if (target.isa("Picture")) {
+          const np = g("newpage");
+          makeForm(
+            np,
+            "loadpic",
+            () => {
+              const loader = g("imgloader");
+              loader.addEventListener("change", e => {
+                var output = document.createElement("img");
+                output.src = URL.createObjectURL(event.target.files[0]);
+                output.onload = function () {
+                  const {width:tw, height:th} = target;
+                  const {width,height} = output;
+                  URL.revokeObjectURL(output.src); // free memory
+                  const ctx = target.offscreenCanvas.getContext("2d");
+                  ctx.drawImage(output, 0, 0,width,height,0,0,tw,th);
+                  np.classList.add("hidden");
+                  renderCanvas();
+                };
+              })
+            },
+            null
+          );
+        }
+      }
+    }
+  }
 
   /**
    * Cancels current action

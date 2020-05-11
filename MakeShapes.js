@@ -37,6 +37,7 @@ class MakeShapes {
     }
     return shape;
   }
+
   /**
    * @param {Object} init
    * @param {CanvasRenderingContext2D} init.ctx canvas
@@ -68,6 +69,38 @@ class MakeShapes {
     }
     return shape;
   }
+
+  /**
+   * @param {Object} init
+   * @param {CanvasRenderingContext2D} init.ctx canvas
+   * @param {Object} init.start startpos
+   * @param {Object} init.start.y ypos
+   * @param {Object} init.start.x xpos
+   * @param {Object} init.end end position
+   * @param {Object} init.end.y ypos
+   * @param {Object} init.end.x xpos
+   * @returns {Shape|undefined}
+   */
+  static picture({ ctx, start, end }) {
+    let shape;
+    const { x, y } = start;
+    const P = new Vector(start);
+    const Q = new Vector(end);
+    const wh = P.sub(Q);
+    const dw = Math.abs(wh.x);
+    const dh = Math.abs(wh.y);
+    const realpoints = xyList2Points([x, y, x + dw, y, x + dw, y + dh, x, y + dh]);
+    if (dh > 0 && dw > 0) {
+      const { x, y } = findCentroid(realpoints);
+      // points is now delta relative to {x,y}
+      const points = realpoints.map((e) => ({ x: e.x - x, y: e.y - y }));
+      shape = new Picture({ x, y, dw, dh,points });
+      shape.render(ctx);
+    }
+    return shape;
+  }
+
+
   /**
    * @param {Object} init
    * @param {CanvasRenderingContext2D} init.ctx canvas
