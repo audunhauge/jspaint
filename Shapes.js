@@ -372,8 +372,8 @@ class Picture extends Polygon {
     const {sx,sy} = super.scale(d,modify);
     this.width *= sx;
     this.height *= sy;
-    this.sx = sx;
-    this.sy = sy;
+    this.sx *= sx;
+    this.sy *= sy;
     return {sx,sy};
   }
 

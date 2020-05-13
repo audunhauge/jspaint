@@ -5,6 +5,7 @@ function makeForm(np, id, actions, ok) {
   const template = /** @type {HTMLTemplateElement} */ (g(id));
   const clone = template.content.cloneNode(true);
   np.innerHTML = "";
+  np.style = "";   // drop styles added by code
   np.append(clone);
 
   const btnOK = g("ok");
@@ -97,9 +98,3 @@ function saveToFile() {
   });
 }
 
-function loadImage() {
-  const np = g("newpage");
-  makeForm(np,"load-file", () => {}, () => {
-    console.log("file loaded");
-  });
-}

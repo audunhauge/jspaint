@@ -176,13 +176,15 @@ function shapeAction(diff, action, gtx) {
     Object.assign(shape, { x, y, c, f, points, r });
   } else {
     for (const s of SelectedShapes.list) {
-      const { x, y, c, f, points, r } = s;
+      // Take snapshot of some properties
+      const { x, y, c, f, points, r, width, height, sx, sy } = s;
       s.points = points.map(({ x, y }) => ({ x, y }));
       s.c = contrast(s.c.substr(1));
       s.f = contrast(s.f.substr(1));
       s[action](diff, AT.modify);
       s.render(gtx);
-      Object.assign(s, { x, y, c, f, points, r });
+      // restore snapshot
+      Object.assign(s, { x, y, c, f, points, r, width, height, sx, sy});
     }
   }
 }

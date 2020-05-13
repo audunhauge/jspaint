@@ -18,11 +18,10 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 </head>
 
-<body>
+<body ondrop="fileDrop(event);" ondragover="fileDrag(event);">
     <home-bar heading="ShapePainter">
         <li>New</li>
         <li>Save</li>
-        <li>Load</li>
     </home-bar>
     <div id="newpage" class="hidden">
     </div>
@@ -117,6 +116,7 @@
         </div>
 
         <div id="draw">
+            <canvas id="back" width="1122" height="794"></canvas>
             <canvas id="canvas" width="1122" height="794"></canvas>
             <canvas id="ghost" width="1122" height="794"></canvas>
         </div>
@@ -165,38 +165,17 @@
             </label>
         </div>
     </template>
-    <template id="load-file">
-        <label id="loadfile" for="imgloader">Dropzone
-          <input id="imgloader" type="file" accept="image/*" onchange="loadFile(event)">
-        </label>       
-        <script>
-            var loadFile = function (event) {
-                var output = document.createElement('img');
-                output.src = URL.createObjectURL(event.target.files[0]);
-                output.onload = function () {
-                    URL.revokeObjectURL(output.src) // free memory
-                    const canvas = document.getElementById("canvas");
-                    const ctx = canvas.getContext("2d");
-                    ctx.drawImage(output, 0, 0);
-
-                }
-            };
-        </script>
-        <div>
-            <label><button id="ok">OK</button>
-                <button id="cancel">Cancel</button>
-            </label>
-        </div>
-    </template>
     <template id="loadpic">
-        <label id="loadfile" for="imgloader">Dropzone
-          <input id="imgloader" type="file" accept="image/*">
-        </label>  
-        <div>
-            <label><button id="ok">OK</button>
-                <button id="cancel">Cancel</button>
+        <div id="imgform">
+            <label id="loadfile" for="imgloader">Dropzone
+                <input id="imgloader" type="file" accept="image/*">
             </label>
-        </div>     
+            <div>
+                <label><button id="ok">OK</button>
+                    <button id="cancel">Cancel</button>
+                </label>
+            </div>
+        </div>
     </template>
 </body>
 

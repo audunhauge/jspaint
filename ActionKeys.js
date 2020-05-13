@@ -75,27 +75,40 @@ class SimpleKeyAction {
       const p = AT.mouse;
       const inside = drawings.filter((e) => e.contains(p));
       if (inside.length > 0) {
-        const target = inside[inside.length - 1];
-        if (target.isa("Picture")) {
+        const maybeTarget = inside[inside.length - 1];
+        if (maybeTarget.isa("Picture")) {
+          // typecast to Picture
+          const target = /** @type {Picture} */ (maybeTarget);
           const np = g("newpage");
           makeForm(
             np,
             "loadpic",
             () => {
               const loader = g("imgloader");
-              loader.addEventListener("change", e => {
-                var output = document.createElement("img");
+              // place the image loader aprox over the Picture shape
+              const {x,y,width,height} = target;
+              const left = (x - width/2 + 180) + "px";
+              const top = (y - height/2 + 100) + "px";
+              const w = Math.max(200,width) ;
+              const h = Math.max(100,height) ;
+              np.style.left = left ;
+              np.style.top = top;
+              np.style.width = w + "px";
+              np.style.height = 40 + h + "px";
+             
+              loader.addEventListener("change", (event) => {
+                const output = document.createElement("img");
                 output.src = URL.createObjectURL(event.target.files[0]);
+                np.classList.add("hidden");
                 output.onload = function () {
-                  const {width:tw, height:th} = target;
-                  const {width,height} = output;
+                  const { width: tw, height: th } = target;
+                  const { width, height } = output;
                   URL.revokeObjectURL(output.src); // free memory
                   const ctx = target.offscreenCanvas.getContext("2d");
-                  ctx.drawImage(output, 0, 0,width,height,0,0,tw,th);
-                  np.classList.add("hidden");
+                  ctx.drawImage(output, 0, 0, width, height, 0, 0, tw, th);
                   renderCanvas();
                 };
-              })
+              });
             },
             null
           );

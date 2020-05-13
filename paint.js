@@ -24,6 +24,7 @@ let shapesActive; // ditto for shapes
 let swatchAdjust;
 
 let ctx;
+let bkg;
 
 let canWidth = 1122;
 let canHeight = 794;
@@ -56,11 +57,13 @@ function setup() {
 
   const divTools = g("tools");
   // cast from html-element to canvas
+  const canBack = /** @type {HTMLCanvasElement} */ (g("back"));
   const canCanvas = /** @type {HTMLCanvasElement} */ (g("canvas"));
   const canGhost = /** @type {HTMLCanvasElement} */ (g("ghost"));
   const divColors = g("colors");
   const divShapelist = g("shapelist");
   ctx = canCanvas.getContext("2d");
+  bkg = canBack.getContext("2d");
   const gtx = canGhost.getContext("2d"); // preview next drawing operation
   const inpPointers = g("pointers"); // turned on by keys
   const inpShapes = g("shapes"); // turned on by keys
@@ -96,13 +99,14 @@ function setup() {
     endAction(e, divShapelist, canCanvas, ctx, gtx)
   );
 
-  /* so we know where mouse is any time */
+  /* relative mouse position on canvas */
   canCanvas.addEventListener("mousemove", (e) => {
     const x = e.clientX - B.x;
     const y = e.clientY - B.y;
     AT.mouse = { x, y };
   });
 
+  /* so we know where mouse is any time */
   document.addEventListener("mousemove", (e) => {
     mouse.x = e.clientX;
     mouse.y = e.clientY;
@@ -111,6 +115,7 @@ function setup() {
   document.addEventListener("keydown", (e) =>
     keyAction(e, canCanvas, ctx, divShapelist)
   );
+
 
   /**
    * Handle mouse-down on document
@@ -124,3 +129,38 @@ function setup() {
     canCanvas.addEventListener("mousemove", (e) => showGhost(e, gtx));
   }
 }
+
+
+function fileDrop(event) {
+  // console.log(event);
+  const { target } = event;
+  if (target?.id === "imgloader") {
+
+  } else {
+    event.preventDefault();
+    let file;
+    if (event.dataTransfer.items) {
+      // Use DataTransferItemList interface to access the file(s)
+      for (let i = 0; i < event.dataTransfer.items.length; i++) {
+        // If dropped items aren't files, reject them
+        if (event.dataTransfer.items[i].kind === 'file') {
+          file = event.dataTransfer.items[i].getAsFile();
+          break;
+        }
+      }
+    }
+    console.log(file);
+    const output = document.createElement("img");
+    output.src = URL.createObjectURL(file);
+    output.onload = function () {
+      URL.revokeObjectURL(output.src); // free memory
+      bkg.drawImage(output, 0, 0);
+      renderCanvas();
+    };
+  }
+}
+function fileDrag(event) {
+  // console.log(event);
+  event.preventDefault();
+}
+
