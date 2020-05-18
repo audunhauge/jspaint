@@ -7,7 +7,7 @@
  * <b>drawings</b> is a global array of shapes to draw. This is the
  * main structure that stores all info about the canvas drawing.
  * Picture is repainted by iterating thru this array.
- * </p> 
+ * </p>
  */
 
 // can only push Shape (or subclasses) into drawings
@@ -18,6 +18,7 @@ let drawings = [];
 // as they connect to the DOM
 let cleanGhost; // wipes ghost canvas
 let cleanCanvas; // wipes main canvas
+let cleanBg; // wipes background canvas
 let B; // Top Left corner of canvas - used to calculate mouse(x,y)
 let pointerActive; // function to check input:radio for pointers
 let shapesActive; // ditto for shapes
@@ -54,6 +55,7 @@ let baseColor = 0; // starting color for swatches
 function setup() {
   cleanGhost = () => gtx.clearRect(0, 0, canWidth, canHeight);
   cleanCanvas = () => ctx.clearRect(0, 0, canWidth, canHeight);
+  cleanBg = () => bkg.clearRect(0, 0, canWidth, canHeight);
 
   const divTools = g("tools");
   // cast from html-element to canvas
@@ -71,19 +73,18 @@ function setup() {
 
   document.addEventListener("menu", (e) => {
     const ce = /** @type {CustomEvent} */ (e);
-    menuAction(ce, ctx, gtx, divShapelist)
-    }
-  );
+    menuAction(ce, ctx, gtx, divShapelist);
+  });
 
   divColors.innerHTML = makeSwatch(baseColor);
   swatchAdjust = () => adjustColors(divColors); // bind to divColors
 
   // set pointers selected
   pointerActive = () =>
-    /**  @type {HTMLInputElement} */ (inpPointers).checked = true;
+    /**  @type {HTMLInputElement} */ ((inpPointers).checked = true);
   // set shapes selected
   shapesActive = () =>
-    /**  @type {HTMLInputElement} */ (inpShapes).checked = true;
+    /**  @type {HTMLInputElement} */ ((inpShapes).checked = true);
 
   renderCanvas = () => renderAll(ctx);
 
@@ -116,7 +117,6 @@ function setup() {
     keyAction(e, canCanvas, ctx, divShapelist)
   );
 
-
   /**
    * Handle mouse-down on document
    * @instance test
@@ -130,12 +130,10 @@ function setup() {
   }
 }
 
-
 function fileDrop(event) {
   // console.log(event);
   const { target } = event;
   if (target?.id === "imgloader") {
-
   } else {
     event.preventDefault();
     let file;
@@ -143,7 +141,7 @@ function fileDrop(event) {
       // Use DataTransferItemList interface to access the file(s)
       for (let i = 0; i < event.dataTransfer.items.length; i++) {
         // If dropped items aren't files, reject them
-        if (event.dataTransfer.items[i].kind === 'file') {
+        if (event.dataTransfer.items[i].kind === "file") {
           file = event.dataTransfer.items[i].getAsFile();
           break;
         }
@@ -153,8 +151,17 @@ function fileDrop(event) {
     const output = document.createElement("img");
     output.src = URL.createObjectURL(file);
     output.onload = function () {
+      const { width, height } = output;
+      const { width: a, height: b } = B;
+      const mw = Math.min(width,a);
+      const mh = Math.min(height,b);
+      const sx = (width - mw) / 2;
+      const sy = (height - mh) / 2;
+      const dx = (a - mw) / 2;
+      const dy = (b - mh) / 2;
       URL.revokeObjectURL(output.src); // free memory
-      bkg.drawImage(output, 0, 0);
+      // center img on canvas
+      bkg.drawImage(output, sx,sy,mw,mh,dx,dy,mw,mh);
       renderCanvas();
     };
   }
@@ -163,4 +170,3 @@ function fileDrag(event) {
   // console.log(event);
   event.preventDefault();
 }
-

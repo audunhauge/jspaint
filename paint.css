@@ -1,7 +1,8 @@
 :root {
   --line: black;
   --fill: red;
-  --backgrd: lightyellow;
+  --menucolor: lightyellow;
+  --backgrd: transparent;
   --height: 794px;
   --width: 1122px;
 }
@@ -22,7 +23,7 @@
 #canvas,
 #colors {
   position: absolute;
-  background-color: lightyellow;
+  background-color: var(--menucolor);
 }
 
 #shapelist {

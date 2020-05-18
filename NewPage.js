@@ -57,6 +57,7 @@ function startNewPage() {
     () => {
       cleanGhost();
       cleanCanvas();
+      cleanBg();
       AT.color = "blue";
       AT.fill = "transparent";
       drawings = [];
