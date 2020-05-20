@@ -114,11 +114,13 @@ class Shape extends Point {
    * @param {number} init.y ypos
    * @param {string} init.c color
    * @param {string} init.f color
+   * @param {number} init.thick line width
    */
-  constructor({ x, y, c = "red", f = "transparent" }) {
+  constructor({ x, y, c = "red", f = "transparent", thick=1 }) {
     super({ x, y });
     this.c = c;
     this.f = f;
+    this.thick = thick;
     this.id = Shape.idx++;
     this.center = { x, y }; // adjust in subclass
     this.r = 1; // adjust in subclass
@@ -220,13 +222,15 @@ class Polygon extends Shape {
    * @param {Array.<Point>} init.points
    * @param {string} init.c color
    * @param {string} init.f color
+   * @param {number} init.thick line width
    */
-  constructor({ x, y, points, c = "red", f = "blue" }) {
-    super({ x, y, c, f });
+  constructor({ x, y, points, c = "red", f = "blue", thick=1 }) {
+    super({ x, y, c, f,thick });
     this.points = points;
   }
 
   drawme(ctx) {
+    ctx.lineWidth = this.thick;
     const { x, y, points } = this;
     const { x: a, y: b } = points[0]; // starting point
     const delta = points2delta(points); // diff between points
@@ -293,9 +297,10 @@ class Circle extends Shape {
      * @param {number} init.r radius
      * @param {string} init.c color
      * @param {string} init.f color
+     * @param {number} init.thick line width
      */
-  constructor({ x, y, r, c, f }) {
-    super({ x, y, c, f });
+  constructor({ x, y, r, c, f, thick }) {
+    super({ x, y, c, f,thick });
     this.r = r;
     this.bb = { x: x - r, y: y - r, w: r + r, h: r + r };
     this.center = { x, y };
@@ -305,6 +310,7 @@ class Circle extends Shape {
    * @param {CanvasRenderingContext2D} ctx canvas to draw on
    */
   drawme(ctx) {
+    ctx.lineWidth = this.thick;
     ctx.arc(this.x, this.y, this.r, 0, 2 * Math.PI, false);
     ctx.closePath();
     ctx.stroke();
@@ -358,7 +364,7 @@ class Picture extends Polygon {
    */
   constructor({ x, y, dw, dh, points }) {
     // images don't c:color-stroke and f:fill
-    super({ x, y, points,c: "lightblue", f: "transparent" });
+    super({ x, y, points,c: "lightblue", f: "transparent", thick:1 });
     this.offscreenCanvas = document.createElement("canvas");
     this.offscreenCanvas.width = dw;
     this.offscreenCanvas.height = dh;

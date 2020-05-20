@@ -29,6 +29,7 @@ class AT {
   static points = [];
   static start = null;
   static end = null;
+  static thick = 1;
   static color = "blue";
   static fill = "transparent";
   static type = "pointer";
@@ -246,10 +247,6 @@ class Tools {
     saveToFile();
   }
 
-  static load({ ctx, divShapelist }) {
-    loadImage();
-  }
-
   static erase({ ctx, divShapelist }) {
     cleanGhost();
     cleanCanvas();
@@ -456,6 +453,21 @@ function showGhost(e, gtx) {
   }
 }
 
+
+/**
+ * Sets width of line for drawing shapes
+ * @param {MouseEvent} e click on line with given size
+ */
+function getLineSize(e) {
+  const t = /** @type {HTMLElement}*/ (e.target);
+  const w = t?.dataset?.thick;
+  if (w) {
+    // element has the property
+    AT.thick = Number(w);
+  }
+}
+
+
 /**
  * Click on color-swatch for line color
  * @param {MouseEvent} e
@@ -506,6 +518,7 @@ function rotateGroup(diff) {
     points,
     c: "red",
     f: "red",
+    thick:1,
   });
   shape.rotate(diff, AT.modify);
   const newpoints = shape.points;
@@ -532,6 +545,7 @@ function scaleGroup(diff) {
     points,
     c: "red",
     f: "red",
+    thick:1,
   });
   shape.scale(diff, AT.modify);
   const newpoints = shape.points;
@@ -577,6 +591,7 @@ function makeJarvisHullShape() {
     points,
     c: "red",
     f: "rgba(255,0,0,0.1)",
+    thick:1,
   });
   return shape;
 }

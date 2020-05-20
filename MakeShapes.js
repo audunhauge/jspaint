@@ -20,6 +20,7 @@ class MakeShapes {
     let shape;
     const c = AT.color;
     const f = AT.fill;
+    const thick = AT.thick;
     if (AT.points.length === 0) {
       AT.points.push(start);
     }
@@ -32,7 +33,7 @@ class MakeShapes {
       }
       const { x, y } = findCentroid(newpoints);
       const points = newpoints.map((e) => ({ x: e.x - x, y: e.y - y }));
-      shape = new Polygon({ x, y, points, c, f });
+      shape = new Polygon({ x, y, points, c, f,thick });
       shape.render(ctx);
     }
     return shape;
@@ -53,6 +54,7 @@ class MakeShapes {
     let shape;
     const c = AT.color;
     const f = AT.fill;
+    const thick = AT.thick;
     const { x, y } = start;
     const P = new Vector(start);
     const Q = new Vector(end);
@@ -64,7 +66,7 @@ class MakeShapes {
       const { x, y } = findCentroid(realpoints);
       // points is now delta relative to {x,y}
       const points = realpoints.map((e) => ({ x: e.x - x, y: e.y - y }));
-      shape = new Polygon({ x, y, points, c, f });
+      shape = new Polygon({ x, y, points, c, f , thick});
       shape.render(ctx);
     }
     return shape;
@@ -116,13 +118,14 @@ class MakeShapes {
     let shape;
     const c = AT.color;
     const f = AT.fill;
+    const thick = AT.thick;
     const { x, y } = start;
     const P = new Vector(start);
     const Q = new Vector(end);
     const wh = P.sub(Q);
     const r = Math.round(wh.length * 10) / 10;
     if (r > 1) {
-      shape = new Circle({ x, y, r, c, f });
+      shape = new Circle({ x, y, r, c, f,thick });
       shape.render(ctx);
     }
     return shape;
@@ -155,6 +158,7 @@ class MakeShapes {
           points,
           c: "gray",
           f: "transparent",
+          thick:1,
         });
         marker.render(ctx);
       }

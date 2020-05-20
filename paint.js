@@ -57,6 +57,7 @@ function setup() {
   cleanCanvas = () => ctx.clearRect(0, 0, canWidth, canHeight);
   cleanBg = () => bkg.clearRect(0, 0, canWidth, canHeight);
 
+  const linesize = g("linesize");
   const divTools = g("tools");
   // cast from html-element to canvas
   const canBack = /** @type {HTMLCanvasElement} */ (g("back"));
@@ -76,15 +77,17 @@ function setup() {
     menuAction(ce, ctx, gtx, divShapelist);
   });
 
+  linesize.addEventListener("click", getLineSize);
+
   divColors.innerHTML = makeSwatch(baseColor);
   swatchAdjust = () => adjustColors(divColors); // bind to divColors
 
   // set pointers selected
   pointerActive = () =>
-    /**  @type {HTMLInputElement} */ ((inpPointers).checked = true);
+    /**  @type {HTMLInputElement} */ (inpPointers).checked = true;
   // set shapes selected
   shapesActive = () =>
-    /**  @type {HTMLInputElement} */ ((inpShapes).checked = true);
+    /**  @type {HTMLInputElement} */ (inpShapes).checked = true;
 
   renderCanvas = () => renderAll(ctx);
 
@@ -153,15 +156,15 @@ function fileDrop(event) {
     output.onload = function () {
       const { width, height } = output;
       const { width: a, height: b } = B;
-      const mw = Math.min(width,a);
-      const mh = Math.min(height,b);
+      const mw = Math.min(width, a);
+      const mh = Math.min(height, b);
       const sx = (width - mw) / 2;
       const sy = (height - mh) / 2;
       const dx = (a - mw) / 2;
       const dy = (b - mh) / 2;
       URL.revokeObjectURL(output.src); // free memory
       // center img on canvas
-      bkg.drawImage(output, sx,sy,mw,mh,dx,dy,mw,mh);
+      bkg.drawImage(output, sx, sy, mw, mh, dx, dy, mw, mh);
       renderCanvas();
     };
   }
